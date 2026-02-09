@@ -1,0 +1,151 @@
+/* App-specific styles */
+
+/* Hero section overlay */
+.hero-overlay {
+    background: linear-gradient(to right, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.7));
+}
+
+/* Case file card style */
+.case-file-card {
+    position: relative;
+    border-left: 4px solid #B45309;
+}
+
+.case-file-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #0F172A;
+}
+
+/* Status badges */
+.status-pending {
+    background-color: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #F59E0B;
+}
+
+.status-approved {
+    background-color: #D1FAE5;
+    color: #065F46;
+    border: 1px solid #10B981;
+}
+
+.status-rejected {
+    background-color: #FEE2E2;
+    color: #991B1B;
+    border: 1px solid #EF4444;
+}
+
+/* Navigation link underline effect */
+.nav-link {
+    position: relative;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: #B45309;
+    transition: width 0.3s ease;
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+/* Stamp effect for approved stories */
+.stamp-approved {
+    position: relative;
+}
+
+.stamp-approved::after {
+    content: 'VERIFIED';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #065F46;
+    border: 2px solid #065F46;
+    transform: rotate(12deg);
+    opacity: 0.8;
+}
+
+/* QR code container */
+.qr-container {
+    border: 2px dashed #E2E8F0;
+    padding: 2rem;
+    background: white;
+}
+
+/* Form input focus states */
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: rgba(15, 23, 42, 0.2);
+    border-color: #0F172A;
+}
+
+/* Story card hover effect */
+.story-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.story-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Page transition */
+.page-enter {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.page-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Mobile menu */
+.mobile-menu {
+    animation: slideIn 0.3s ease forwards;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Loading spinner */
+.spinner {
+    border: 3px solid #E2E8F0;
+    border-top-color: #0F172A;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

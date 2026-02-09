@@ -1,0 +1,136 @@
+{
+  "identity": {
+    "name": "The Legal Guardian",
+    "tone": "Authoritative, Empathetic, Transparent, Justice-Driven",
+    "archetype": "The Sage & The Caregiver",
+    "keywords": ["Justice", "Healing", "Truth", "Support"]
+  },
+  "typography": {
+    "primary_font": "Playfair Display",
+    "secondary_font": "Manrope",
+    "mono_font": "JetBrains Mono",
+    "scale": {
+      "h1": "text-5xl md:text-6xl font-serif tracking-tight leading-tight",
+      "h2": "text-4xl md:text-5xl font-serif tracking-tight",
+      "h3": "text-2xl md:text-3xl font-serif font-medium",
+      "body": "text-base md:text-lg font-sans leading-relaxed text-slate-600",
+      "caption": "text-sm font-mono uppercase tracking-widest text-slate-500"
+    },
+    "imports": [
+      "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    ]
+  },
+  "colors": {
+    "palette": {
+      "primary": {
+        "DEFAULT": "#0F172A",
+        "foreground": "#F8FAFC",
+        "description": "Deep Navy - Represents Authority and Trust"
+      },
+      "secondary": {
+        "DEFAULT": "#B45309",
+        "foreground": "#FFFFFF",
+        "description": "Dark Amber - Represents Justice and Hope"
+      },
+      "accent": {
+        "DEFAULT": "#0D9488",
+        "foreground": "#FFFFFF",
+        "description": "Teal - Represents Healing and Medical Context"
+      },
+      "background": "#F8FAFC",
+      "surface": "#FFFFFF",
+      "border": "#E2E8F0",
+      "muted": "#64748B"
+    },
+    "usage_rules": {
+      "gradients": "FORBIDDEN. Use solid, flat colors only.",
+      "text_contrast": "All text must meet APCA standards. Use Slate-900 for main text, Slate-600 for secondary.",
+      "status_colors": {
+        "success": "#15803D",
+        "error": "#B91C1C",
+        "warning": "#C2410C",
+        "info": "#1D4ED8"
+      }
+    }
+  },
+  "visual_enhancers": {
+    "textures": {
+      "paper_grain": "url('https://www.transparenttextures.com/patterns/cream-paper.png')",
+      "noise": "Use a subtle SVG noise overlay on the main background with 0.03 opacity."
+    },
+    "motifs": [
+      "The Redaction Bar: Use black blocks that reveal text on hover for 'sensitive' storytelling.",
+      "The Case File: Use tabbed folders and typewriter fonts for case details.",
+      "The Stamp: Use a 'stamp' visual for 'Approved' or 'Verified' statuses."
+    ],
+    "borders": "Sharp, distinct borders. rounded-none or rounded-sm max. 2px border width for emphasis.",
+    "shadows": "shadow-sm for cards, shadow-xl for modals. Avoid diffuse, colored shadows."
+  },
+  "layout_strategies": {
+    "grid_system": "The 'Case File' Grid: Dense, information-rich layouts for dashboards. Asymmetric 'Editorial' layouts for stories.",
+    "spacing": "Generous padding (p-8, p-12) for reading sections. Tight, tabular spacing for data.",
+    "containers": "Max width 1400px. Text containers max-w-prose (65ch) for optimal readability."
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground rounded-none px-8 py-3 uppercase tracking-widest font-bold hover:bg-slate-800 transition-colors",
+      "secondary": "border-2 border-primary text-primary bg-transparent rounded-none px-8 py-3 uppercase tracking-widest font-bold hover:bg-slate-100 transition-colors",
+      "ghost": "text-slate-600 hover:text-primary hover:bg-slate-100 rounded-none px-4 py-2"
+    },
+    "cards": {
+      "style": "bg-white border border-slate-200 rounded-none p-6 shadow-sm hover:shadow-md transition-shadow",
+      "header": "border-b border-slate-100 pb-4 mb-4"
+    },
+    "inputs": {
+      "style": "rounded-none border-slate-300 focus:ring-2 focus:ring-primary/20 focus:border-primary bg-slate-50"
+    },
+    "navigation": {
+      "style": "Sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200",
+      "link": "font-serif text-slate-700 hover:text-primary transition-colors"
+    }
+  },
+  "image_assets": {
+    "hero_section": {
+      "url": "https://images.pexels.com/photos/3845456/pexels-photo-3845456.jpeg",
+      "alt": "Comforting hands holding each other, representing support",
+      "usage": "Hero background or split-screen feature image. Apply grayscale filter with 20% opacity overlay of primary color."
+    },
+    "about_section": {
+      "url": "https://images.pexels.com/photos/7686122/pexels-photo-7686122.jpeg",
+      "alt": "Diverse group of Indian community members",
+      "usage": "About Us team or community section."
+    },
+    "legal_context": {
+      "url": "https://images.pexels.com/photos/5669602/pexels-photo-5669602.jpeg",
+      "alt": "Wooden gavel on a judge's table",
+      "usage": "Legal resources header or background."
+    },
+    "medical_context": {
+      "url": "https://images.pexels.com/photos/7723554/pexels-photo-7723554.jpeg",
+      "alt": "Doctor consulting with a patient",
+      "usage": "Medical negligence awareness section."
+    }
+  },
+  "motion": {
+    "philosophy": "Dignified and Deliberate. No bouncing.",
+    "transitions": "transition-all duration-300 ease-out",
+    "entrance": "fade-in-up: opacity 0 -> 1, translate-y 10px -> 0px",
+    "hover": "lift: translate-y -2px"
+  },
+  "accessibility": {
+    "contrast": "Strict adherence to WCAG AA. High contrast text.",
+    "focus_states": "Visible 2px offset ring in Primary color.",
+    "reduced_motion": "Respect user settings for reduced motion."
+  },
+  "instructions_to_main_agent": [
+    "1. INSTALL FONTS: Add the Google Fonts import to index.css immediately.",
+    "2. CONFIGURE TAILWIND: Update tailwind.config.js with the specific colors and font families defined above.",
+    "3. OVERRIDE SHADCN: Go to components/ui and remove 'rounded-md' from button.jsx, card.jsx, input.jsx. Enforce 'rounded-none'.",
+    "4. LAYOUT: Build the Landing Page using the 'Split Screen' strategy with the Hero Image.",
+    "5. AUTH: Implement the JWT auth pages using the 'Card' component centered on screen with a 'Legal Document' vibe.",
+    "6. FORMS: Use the 'Input' style defined above. Add 'data-testid' to all inputs.",
+    "7. QR CODE: For the donation page, create a clean, printable-style layout.",
+    "8. DO NOT use gradients. Stick to the solid colors and white space.",
+    "9. Use 'sonner' for all notifications."
+  ]
+}
