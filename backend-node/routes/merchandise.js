@@ -1,3 +1,4 @@
+const logger = require('../utils/logger');
 const express = require('express');
 const router = express.Router();
 const path = require('path');
@@ -22,7 +23,7 @@ router.post('/merchandise', getCurrentUser, requireAdmin, async (req, res) => {
 
     res.json(merchandise);
   } catch (error) {
-    console.error('Create merchandise error:', error);
+    logger.error({ err: error }, 'Create merchandise error:');
     res.status(500).json({ detail: 'Failed to create merchandise' });
   }
 });
@@ -38,7 +39,7 @@ router.get('/merchandise', async (req, res) => {
     const items = await Merchandise.find(query).sort({ created_at: -1 }).limit(100);
     res.json(items);
   } catch (error) {
-    console.error('Get merchandise error:', error);
+    logger.error({ err: error }, 'Get merchandise error:');
     res.status(500).json({ detail: 'Failed to fetch merchandise' });
   }
 });
@@ -52,7 +53,7 @@ router.get('/merchandise/:merchandiseId', async (req, res) => {
     }
     res.json(item);
   } catch (error) {
-    console.error('Get merchandise item error:', error);
+    logger.error({ err: error }, 'Get merchandise item error:');
     res.status(500).json({ detail: 'Failed to fetch merchandise' });
   }
 });
@@ -79,7 +80,7 @@ router.put('/merchandise/:merchandiseId', getCurrentUser, requireAdmin, async (r
 
     res.json(item);
   } catch (error) {
-    console.error('Update merchandise error:', error);
+    logger.error({ err: error }, 'Update merchandise error:');
     res.status(500).json({ detail: 'Failed to update merchandise' });
   }
 });
@@ -98,7 +99,7 @@ router.delete('/merchandise/:merchandiseId', getCurrentUser, requireAdmin, async
 
     res.json({ message: 'Merchandise deactivated successfully' });
   } catch (error) {
-    console.error('Delete merchandise error:', error);
+    logger.error({ err: error }, 'Delete merchandise error:');
     res.status(500).json({ detail: 'Failed to delete merchandise' });
   }
 });
@@ -132,7 +133,7 @@ router.post('/merchandise/:merchandiseId/image', getCurrentUser, requireAdmin, u
 
     res.json({ message: 'Image uploaded successfully', image_url: imageUrl });
   } catch (error) {
-    console.error('Upload merchandise image error:', error);
+    logger.error({ err: error }, 'Upload merchandise image error:');
     res.status(500).json({ detail: 'Failed to upload image' });
   }
 });
@@ -143,7 +144,7 @@ router.get('/admin/merchandise', getCurrentUser, requireAdmin, async (req, res) 
     const items = await Merchandise.find({}).sort({ created_at: -1 }).limit(500);
     res.json(items);
   } catch (error) {
-    console.error('Admin get merchandise error:', error);
+    logger.error({ err: error }, 'Admin get merchandise error:');
     res.status(500).json({ detail: 'Failed to fetch merchandise' });
   }
 });

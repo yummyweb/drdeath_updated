@@ -1,3 +1,4 @@
+import AdminResources from './AdminResources';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
@@ -45,21 +46,23 @@ import { getApiUrl } from '@/config/env';
 const API = getApiUrl();
 
 const Admin = () => {
-  const { user, isAdmin, getAuthHeader, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [stories, setStories] = useState([]);
   const [contacts, setContacts] = useState([]);
-  const [advocates, setAdvocates] = useState([]);
+  const [advocates, setAdvocates]   = useState([]);
+  const [volunteers, setVolunteers] = useState([]);
+  const [doctors, setDoctors]           = useState([]);
+  const [journalists, setJournalists]   = useState([]);
+  const [researchers, setResearchers]   = useState([]);
   const [grants, setGrants] = useState([]);
   const [merchandise, setMerchandise] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('pending');
+  const [activeTab, setActiveTab] = useState('overview');
   
-  // ✅ FIX 1: Removed activeTab from dependencies (not needed, setActiveTab is stable)
   const handleTabChange = useCallback((value) => {
-    console.log('Tab change requested:', value);
     setActiveTab(value);
   }, []);
   const [expandedStory, setExpandedStory] = useState(null);
@@ -67,6 +70,7 @@ const Admin = () => {
   const [moderationDialog, setModerationDialog] = useState({ open: false, item: null, action: null, type: null });
   const [merchandiseDialog, setMerchandiseDialog] = useState({ open: false, item: null });
   const [advocateDialog, setAdvocateDialog] = useState({ open: false, advocate: null });
+  const [confirmMerchDelete, setConfirmMerchDelete] = useState(null);
   const [adminNotes, setAdminNotes] = useState('');
   const [approvedAmount, setApprovedAmount] = useState('');
   const [moderating, setModerating] = useState(false);
@@ -92,53 +96,37 @@ const Admin = () => {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statsRes, storiesRes, contactsRes, advocatesRes, grantsRes, merchRes, ordersRes] = await Promise.all([
-        axios.get(`${API}/admin/stats`, getAuthHeader()),
-        axios.get(`${API}/admin/stories`, getAuthHeader()),
-        axios.get(`${API}/admin/contacts`, getAuthHeader()),
-        axios.get(`${API}/admin/advocates`, getAuthHeader()),
-        axios.get(`${API}/admin/grants`, getAuthHeader()),
-        axios.get(`${API}/admin/merchandise`, getAuthHeader()),
-        axios.get(`${API}/admin/orders`, getAuthHeader())
+      const [statsRes, storiesRes, contactsRes, advocatesRes, grantsRes, merchRes, ordersRes, volunteersRes, doctorsRes, journalistsRes, researchersRes] = await Promise.all([
+        axios.get(`${API}/admin/stats`),
+        axios.get(`${API}/admin/stories`),
+        axios.get(`${API}/admin/contacts`),
+        axios.get(`${API}/admin/advocates`),
+        axios.get(`${API}/admin/grants`),
+        axios.get(`${API}/admin/merchandise`),
+        axios.get(`${API}/admin/orders`),
+        axios.get(`${API}/admin/volunteers`),
+        axios.get(`${API}/admin/doctors`),
+        axios.get(`${API}/admin/journalists`),
+        axios.get(`${API}/admin/researchers`),
       ]);
       setStats(statsRes.data);
-      setStories(storiesRes.data);
-      // Debug: Log stories to help diagnose missing stories
-      console.log('Stories loaded:', storiesRes.data.length, storiesRes.data);
-      if (storiesRes.data.length > 0) {
-        console.log('First story details:', {
-          id: storiesRes.data[0].id,
-          title: storiesRes.data[0].title,
-          user_name: storiesRes.data[0].user_name,
-          status: storiesRes.data[0].status,
-          created_at: storiesRes.data[0].created_at
-        });
-        const maheshStory = storiesRes.data.find(s => 
-          s.user_name?.toLowerCase().includes('mahesh') || 
-          s.title?.toLowerCase().includes('mahesh')
-        );
-        if (maheshStory) {
-          console.log('Found Mahesh story:', maheshStory);
-        } else {
-          console.log('Mahesh story not found in loaded stories. All story titles:', storiesRes.data.map(s => s.title));
-          console.log('All user names:', storiesRes.data.map(s => s.user_name));
-        }
-      }
-      setContacts(contactsRes.data);
-      setAdvocates(advocatesRes.data);
-      setGrants(grantsRes.data);
+      setStories(storiesRes.data.data ?? storiesRes.data);
+      setContacts(contactsRes.data.data ?? contactsRes.data);
+      setAdvocates(advocatesRes.data.data ?? advocatesRes.data);
+      setGrants(grantsRes.data.data ?? grantsRes.data);
       setMerchandise(merchRes.data);
       setOrders(ordersRes.data);
-      
-      // Debug: Log advocates count
-      console.log('Advocates loaded:', advocatesRes.data.length, advocatesRes.data);
+      setVolunteers(volunteersRes.data.data ?? volunteersRes.data);
+      setDoctors(doctorsRes.data.data ?? doctorsRes.data);
+      setJournalists(journalistsRes.data.data ?? journalistsRes.data);
+      setResearchers(researchersRes.data.data ?? researchersRes.data);
     } catch (error) {
       console.error('Error fetching admin data:', error);
       toast.error('Failed to load admin data');
     } finally {
       setLoading(false);
     }
-  }, [getAuthHeader]);
+  }, []);
 
   useEffect(() => {
     if (!authLoading) {
@@ -175,7 +163,7 @@ const Admin = () => {
         }
       }
 
-      await axios.put(endpoint, body, getAuthHeader());
+      await axios.put(endpoint, body);
 
       if (moderationDialog.type === 'story') {
         setStories(prev => prev.map(s => 
@@ -203,7 +191,7 @@ const Admin = () => {
       setApprovedAmount('');
       
       // Refresh stats
-      const statsRes = await axios.get(`${API}/admin/stats`, getAuthHeader());
+      const statsRes = await axios.get(`${API}/admin/stats`);
       setStats(statsRes.data);
     } catch (error) {
       console.error('Error moderating:', error);
@@ -242,6 +230,36 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-slate-50" data-testid="admin-page">
+
+      {/* Merchandise delete confirmation */}
+      {confirmMerchDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
+            <h3 className="font-semibold text-slate-900 mb-2">Delete Item?</h3>
+            <p className="text-sm text-slate-600 mb-5">
+              <span className="font-medium">"{confirmMerchDelete.name}"</span> will be permanently deleted.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setConfirmMerchDelete(null)}
+                className="px-4 py-2 text-sm border border-slate-300 rounded-md text-slate-600 hover:bg-slate-50">
+                Cancel
+              </button>
+              <button onClick={async () => {
+                const item = confirmMerchDelete;
+                setConfirmMerchDelete(null);
+                try {
+                  await axios.delete(`${API}/merchandise/${item.id}`);
+                  toast.success('Item deleted');
+                  fetchData();
+                } catch { toast.error('Failed to delete item'); }
+              }} className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-primary text-white py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -267,38 +285,35 @@ const Admin = () => {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
-          {stats && [
-            { label: 'Users', value: stats.total_users, icon: <Users className="h-4 w-4" /> },
-            { label: 'Stories', value: stats.pending_stories, icon: <FileText className="h-4 w-4" />, color: 'text-amber-600' },
-            { label: 'Approved', value: stats.approved_stories, icon: <CheckCircle className="h-4 w-4" />, color: 'text-green-600' },
-            { label: 'Advocates', value: stats.pending_advocates, icon: <Scale className="h-4 w-4" />, color: 'text-amber-600' },
-            { label: 'Adv. Active', value: stats.approved_advocates, icon: <Scale className="h-4 w-4" />, color: 'text-green-600' },
-            { label: 'Grants', value: stats.pending_grants, icon: <IndianRupee className="h-4 w-4" />, color: 'text-amber-600' },
-            { label: 'Grants OK', value: stats.approved_grants, icon: <IndianRupee className="h-4 w-4" />, color: 'text-green-600' },
-            { label: 'Pending Adv.', value: stats.pending_advocates, icon: <Scale className="h-4 w-4" />, color: 'text-amber-600' }
-          ].map((stat, index) => (
-            <Card key={index} className="border-slate-200" data-testid={`admin-stat-${index}`}>
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wide">{stat.label}</p>
-                    <p className={`text-xl font-bold ${stat.color || 'text-primary'}`}>{stat.value}</p>
-                  </div>
-                  <div className={stat.color || 'text-slate-400'}>{stat.icon}</div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+      {/* Top stats strip */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
+            {stats && [
+              { label: 'Registered Users',    value: stats.total_users,           color: 'text-slate-800' },
+              { label: 'Pending Stories',      value: stats.pending_stories,       color: 'text-amber-600' },
+              { label: 'Pending Registrations',value: (stats.pending_volunteers||0)+(stats.pending_doctors||0)+(stats.pending_journalists||0)+(stats.pending_researchers||0)+(stats.pending_advocates||0), color: 'text-amber-600' },
+              { label: 'Pending Legal Aid',       value: stats.pending_grants,        color: 'text-amber-600' },
+              { label: 'Upcoming Events',      value: stats.upcoming_events,       color: 'text-blue-600' },
+              { label: 'Live Opportunities',   value: stats.published_opportunities,color: 'text-green-600' },
+              { label: 'Actions Needed',       value: stats.total_pending_actions, color: stats.total_pending_actions > 0 ? 'text-red-600' : 'text-green-600' },
+            ].map((s, i) => (
+              <div key={i} className="text-center" data-testid={`admin-stat-${i}`}>
+                <p className={`text-2xl font-bold ${s.color}`}>{s.value ?? '–'}</p>
+                <p className="text-xs text-slate-500 mt-0.5 leading-tight">{s.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="mb-6 w-full flex-wrap bg-slate-200 p-1">
+        <TabsList className="mb-6 w-full overflow-x-auto whitespace-nowrap bg-slate-200 p-1">
+            <TabsTrigger value="overview" data-testid="tab-overview" className="cursor-pointer">
+              Overview
+            </TabsTrigger>
             <TabsTrigger value="pending" data-testid="tab-pending" className="cursor-pointer">
               Pending Stories ({stats?.pending_stories || 0})
             </TabsTrigger>
@@ -328,9 +343,111 @@ const Admin = () => {
               Merchandise ({merchandise.length || 0})
             </TabsTrigger>
             <TabsTrigger value="orders" data-testid="tab-orders" className="cursor-pointer">
-              Orders ({orders.length})
+
+Orders ({orders.length})
+
+</TabsTrigger>
+
+<TabsTrigger value="resources" data-testid="tab-resources" className="cursor-pointer">
+  Resources
+</TabsTrigger>
+            <TabsTrigger value="volunteers" data-testid="tab-volunteers" className="cursor-pointer">
+              Volunteers ({volunteers.filter(v => v.status === 'pending').length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="doctors" data-testid="tab-doctors" className="cursor-pointer">
+              Doctors ({doctors.filter(d => d.status === 'pending').length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="journalists" data-testid="tab-journalists" className="cursor-pointer">
+              Journalists ({journalists.filter(j => j.status === 'pending').length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="researchers" data-testid="tab-researchers" className="cursor-pointer">
+              Researchers ({researchers.filter(r => r.status === 'pending').length || 0})
             </TabsTrigger>
           </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview">
+            <div className="space-y-6">
+              {/* Pending actions summary */}
+              {stats && stats.total_pending_actions > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                  <p className="font-semibold text-amber-800 mb-3 text-sm">
+                    {stats.total_pending_actions} item{stats.total_pending_actions !== 1 ? 's' : ''} need your attention
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { label: 'Stories',     count: stats.pending_stories,     tab: 'pending' },
+                      { label: 'Advocates',   count: stats.pending_advocates,   tab: 'advocates' },
+                      { label: 'Volunteers',  count: stats.pending_volunteers,  tab: 'volunteers' },
+                      { label: 'Doctors',     count: stats.pending_doctors,     tab: 'doctors' },
+                      { label: 'Journalists', count: stats.pending_journalists, tab: 'journalists' },
+                      { label: 'Researchers', count: stats.pending_researchers, tab: 'researchers' },
+                      { label: 'Legal Aid',      count: stats.pending_grants,      tab: 'grants' },
+                    ].filter(x => x.count > 0).map(x => (
+                      <button key={x.tab} onClick={() => handleTabChange(x.tab)}
+                        className="text-xs bg-amber-100 text-amber-800 border border-amber-300 px-3 py-1.5 rounded-full hover:bg-amber-200 font-medium">
+                        {x.label}: {x.count} pending
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Module cards */}
+              <div>
+                <h2 className="font-semibold text-slate-700 text-sm uppercase tracking-wide mb-3">Platform Modules</h2>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {[
+                    { title: 'Opportunities', desc: 'Jobs, internships, fellowships', href: '/admin/opportunities', stats: `${stats?.published_opportunities ?? 0} live` },
+                    { title: 'Events', desc: 'Conferences, webinars, workshops', href: '/admin/events', stats: `${stats?.upcoming_events ?? 0} upcoming` },
+                    { title: 'Resources', desc: 'Legal resource library', href: null, tab: 'resources', stats: 'Manage' },
+                    { title: 'Stories', desc: 'Patient stories moderation', href: null, tab: 'pending', stats: `${stats?.pending_stories ?? 0} pending` },
+                    { title: 'Legal Aid', desc: 'Legal aid applications', href: null, tab: 'grants', stats: `${stats?.pending_grants ?? 0} pending` },
+                    { title: 'Site Settings', desc: 'Platform configuration', href: '/admin/settings', stats: 'Configure' },
+                  ].map(m => (
+                    m.href ? (
+                      <a key={m.title} href={m.href}
+                        className="block bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm hover:border-slate-300 transition-all">
+                        <p className="font-semibold text-slate-900 text-sm">{m.title}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{m.desc}</p>
+                        <p className="text-xs text-slate-400 mt-2 font-medium">{m.stats}</p>
+                      </a>
+                    ) : (
+                      <button key={m.title} onClick={() => handleTabChange(m.tab)}
+                        className="block text-left w-full bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm hover:border-slate-300 transition-all">
+                        <p className="font-semibold text-slate-900 text-sm">{m.title}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{m.desc}</p>
+                        <p className="text-xs text-slate-400 mt-2 font-medium">{m.stats}</p>
+                      </button>
+                    )
+                  ))}
+                </div>
+              </div>
+
+              {/* Community registrations summary */}
+              <div>
+                <h2 className="font-semibold text-slate-700 text-sm uppercase tracking-wide mb-3">Community Registrations</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {[
+                    { label: 'Advocates',   total: stats?.total_advocates,   pending: stats?.pending_advocates,   tab: 'advocates' },
+                    { label: 'Volunteers',  total: stats?.total_volunteers,  pending: stats?.pending_volunteers,  tab: 'volunteers' },
+                    { label: 'Doctors',     total: stats?.total_doctors,     pending: stats?.pending_doctors,     tab: 'doctors' },
+                    { label: 'Journalists', total: stats?.total_journalists, pending: stats?.pending_journalists, tab: 'journalists' },
+                    { label: 'Researchers', total: stats?.total_researchers, pending: stats?.pending_researchers, tab: 'researchers' },
+                  ].map(m => (
+                    <button key={m.label} onClick={() => handleTabChange(m.tab)}
+                      className="bg-white border border-slate-200 rounded-xl p-4 text-left hover:shadow-sm hover:border-slate-300 transition-all">
+                      <p className="text-2xl font-bold text-slate-900">{m.total ?? 0}</p>
+                      <p className="text-xs text-slate-600 font-medium">{m.label}</p>
+                      {m.pending > 0 && (
+                        <p className="text-xs text-amber-600 mt-1">{m.pending} pending</p>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
 
           {/* Stories Tabs */}
           {['pending', 'approved', 'rejected', 'all'].map(tab => (
@@ -566,191 +683,90 @@ const Admin = () => {
 
           {/* Advocates Tab */}
           <TabsContent value="advocates">
-            {!advocates || advocates.length === 0 ? (
-              <Card className="border-slate-200">
-                <CardContent className="p-12 text-center">
-                  <Scale className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-                  <h3 className="font-serif text-xl font-bold text-primary mb-2">
-                    No advocate registrations
-                  </h3>
-                  <p className="text-sm text-slate-500">Advocates will appear here once they register.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                <div className="mb-4">
-                  <p className="text-sm text-slate-600">
-                    Showing {advocates.length} advocate(s) ({advocates.filter(a => a.status === 'pending').length} pending, {advocates.filter(a => a.status === 'approved').length} approved)
-                  </p>
-                </div>
-                {/* Show pending advocates first */}
-                {advocates.filter(a => a.status === 'pending').length > 0 && (
-                  <>
-                    {advocates.filter(a => a.status === 'pending').map(advocate => (
-                      <Card key={advocate.id} className="border-slate-200" data-testid={`advocate-${advocate.id}`}>
-                        <CardContent className="p-6">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                {getStatusBadge(advocate.status)}
-                                <span className="text-xs text-slate-400">
-                                  {new Date(advocate.created_at).toLocaleString('en-IN')}
-                                </span>
-                              </div>
-                              <h3 className="font-serif text-lg font-bold text-primary mb-1">
-                                {advocate.full_name}
-                              </h3>
-                              <p className="text-sm text-slate-500 mb-2">
-                                Bar Council: {advocate.bar_council_number} • {advocate.experience_years} years exp.
-                              </p>
-                              <div className="flex flex-wrap gap-1 mb-2">
-                                {advocate.specializations && advocate.specializations.map((spec, idx) => (
-                                  <Badge key={idx} variant="secondary" className="text-xs">{spec}</Badge>
-                                ))}
-                              </div>
-                              <p className="text-sm text-slate-500 flex items-center gap-2 mb-1">
-                                <MapPin className="h-4 w-4" />
-                                {advocate.areas_of_operation && advocate.areas_of_operation.join(', ')}
-                              </p>
-                              <p className="text-sm text-slate-500 flex items-center gap-2">
-                                <Phone className="h-4 w-4" />
-                                {advocate.phone} • {advocate.email}
-                              </p>
-                              {advocate.about && (
-                                <p className="text-sm text-slate-600 mt-2 bg-slate-50 p-3 border">
-                                  {advocate.about}
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex gap-2 ml-4">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setAdvocateForm({
-                                    full_name: advocate.full_name || '',
-                                    email: advocate.email || '',
-                                    phone: advocate.phone || '',
-                                    bar_council_number: advocate.bar_council_number || '',
-                                    experience_years: advocate.experience_years || '',
-                                    about: advocate.about || '',
-                                    specializations: advocate.specializations || [],
-                                    areas_of_operation: advocate.areas_of_operation || [],
-                                    languages: advocate.languages || []
-                                  });
-                                  setAdvocateDialog({ open: true, advocate });
-                                }}
-                              >
-                                <Edit className="h-4 w-4 mr-1" />
-                                Edit
-                              </Button>
-                              {advocate.status === 'pending' && (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    className="bg-green-600 hover:bg-green-700"
-                                    onClick={() => setModerationDialog({ open: true, item: advocate, action: 'approved', type: 'advocate' })}
-                                    data-testid={`approve-advocate-${advocate.id}`}
-                                  >
-                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                    Approve
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={() => setModerationDialog({ open: true, item: advocate, action: 'rejected', type: 'advocate' })}
-                                    data-testid={`reject-advocate-${advocate.id}`}
-                                  >
-                                    <XCircle className="h-4 w-4 mr-1" />
-                                    Reject
-                                  </Button>
-                                </>
-                              )}
-                            </div>
+            <div className="space-y-4">
+              {!advocates || advocates.length === 0 ? (
+                <Card className="border-slate-200">
+                  <CardContent className="p-12 text-center text-slate-400">
+                    No advocate registrations yet.
+                  </CardContent>
+                </Card>
+              ) : (
+                advocates.map(advocate => (
+                  <Card key={advocate._id || advocate.id} className="border-slate-200" data-testid={`advocate-${advocate.id}`}>
+                    <CardContent className="p-5">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <span className="font-semibold text-slate-900">{advocate.full_name}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                              advocate.status === 'approved' ? 'bg-green-100 text-green-700' :
+                              advocate.status === 'rejected' ? 'bg-red-100 text-red-600' :
+                              'bg-amber-100 text-amber-700'
+                            }`}>{advocate.status}</span>
+                            {advocate.verified && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Verified</span>}
+                            {advocate.featured && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Featured</span>}
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </>
-                )}
-                {/* Show approved advocates */}
-                {advocates.filter(a => a.status === 'approved').length > 0 && (
-                  <>
-                    {advocates.filter(a => a.status === 'pending').length > 0 && (
-                      <div className="mt-8 mb-4">
-                        <h3 className="font-serif text-lg font-bold text-primary mb-2">Approved Advocates</h3>
+                          <p className="text-sm text-slate-500">{advocate.email} · {advocate.phone}{advocate.city ? ` · ${advocate.city}` : ''}{advocate.state ? `, ${advocate.state}` : ''}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">Bar Council: {advocate.bar_council_number} · {advocate.experience_years} yrs exp</p>
+                          {advocate.specializations?.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {advocate.specializations.map((s, i) => <Badge key={i} variant="secondary" className="text-xs">{s}</Badge>)}
+                            </div>
+                          )}
+                          {advocate.areas_of_operation?.length > 0 && (
+                            <p className="text-xs text-slate-400 mt-0.5">Areas: {advocate.areas_of_operation.slice(0, 5).join(', ')}</p>
+                          )}
+                          {advocate.languages?.length > 0 && <p className="text-xs text-slate-400 mt-0.5">Languages: {advocate.languages.join(', ')}</p>}
+                          {advocate.about && <p className="text-sm text-slate-700 mt-2 line-clamp-2">{advocate.about}</p>}
+                          {advocate.admin_notes && <p className="text-xs text-slate-400 mt-1 italic">Note: {advocate.admin_notes}</p>}
+                        </div>
+                        <div className="flex flex-col gap-2 flex-shrink-0">
+                          <div className="flex gap-2">
+                            {advocate.status !== 'approved' && (
+                              <button
+                                onClick={() => setModerationDialog({ open: true, item: advocate, action: 'approved', type: 'advocate' })}
+                                className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700"
+                                data-testid={`approve-advocate-${advocate.id}`}
+                              >Approve</button>
+                            )}
+                            {advocate.status !== 'rejected' && (
+                              <button
+                                onClick={() => setModerationDialog({ open: true, item: advocate, action: 'rejected', type: 'advocate' })}
+                                className="px-3 py-1.5 text-xs border border-red-300 text-red-600 rounded-md hover:bg-red-50"
+                                data-testid={`reject-advocate-${advocate.id}`}
+                              >Reject</button>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await axios.put(`${API}/admin/advocates/${advocate._id}/verify`);
+                                  setAdvocates(prev => prev.map(x => x._id === advocate._id ? { ...x, verified: res.data.verified } : x));
+                                } catch { toast.error('Failed to update'); }
+                              }}
+                              className="px-3 py-1.5 text-xs border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50"
+                            >{advocate.verified ? 'Unverify' : 'Verify'}</button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await axios.delete(`${API}/admin/advocates/${advocate._id}`);
+                                  setAdvocates(prev => prev.filter(x => x._id !== advocate._id));
+                                } catch { toast.error('Failed to delete'); }
+                              }}
+                              className="px-3 py-1.5 text-xs border border-slate-200 text-slate-500 rounded-md hover:bg-slate-50"
+                            >Delete</button>
+                          </div>
+                        </div>
                       </div>
-                    )}
-                    {advocates.filter(a => a.status === 'approved').map(advocate => (
-                      <Card key={advocate.id} className="border-slate-200" data-testid={`advocate-${advocate.id}`}>
-                        <CardContent className="p-6">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                {getStatusBadge(advocate.status)}
-                                <span className="text-xs text-slate-400">
-                                  {new Date(advocate.created_at).toLocaleString('en-IN')}
-                                </span>
-                              </div>
-                              <h3 className="font-serif text-lg font-bold text-primary mb-1">
-                                {advocate.full_name}
-                              </h3>
-                              <p className="text-sm text-slate-500 mb-2">
-                                Bar Council: {advocate.bar_council_number} • {advocate.experience_years} years exp.
-                              </p>
-                              <div className="flex flex-wrap gap-1 mb-2">
-                                {advocate.specializations && advocate.specializations.map((spec, idx) => (
-                                  <Badge key={idx} variant="secondary" className="text-xs">{spec}</Badge>
-                                ))}
-                              </div>
-                              <p className="text-sm text-slate-500 flex items-center gap-2 mb-1">
-                                <MapPin className="h-4 w-4" />
-                                {advocate.areas_of_operation && advocate.areas_of_operation.join(', ')}
-                              </p>
-                              <p className="text-sm text-slate-500 flex items-center gap-2">
-                                <Phone className="h-4 w-4" />
-                                {advocate.phone} • {advocate.email}
-                              </p>
-                              {advocate.about && (
-                                <p className="text-sm text-slate-600 mt-2 bg-slate-50 p-3 border">
-                                  {advocate.about}
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex gap-2 ml-4">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setAdvocateForm({
-                                    full_name: advocate.full_name || '',
-                                    email: advocate.email || '',
-                                    phone: advocate.phone || '',
-                                    bar_council_number: advocate.bar_council_number || '',
-                                    experience_years: advocate.experience_years || '',
-                                    about: advocate.about || '',
-                                    specializations: advocate.specializations || [],
-                                    areas_of_operation: advocate.areas_of_operation || [],
-                                    languages: advocate.languages || []
-                                  });
-                                  setAdvocateDialog({ open: true, advocate });
-                                }}
-                              >
-                                <Edit className="h-4 w-4 mr-1" />
-                                Edit
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </>
-                )}
-              </div>
-            )}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
           </TabsContent>
 
-          {/* Grants Tab */}
+          {/* Legal Aid Tab */}
           <TabsContent value="grants">
             {grants.filter(g => g.status === 'pending').length === 0 ? (
               <Card className="border-slate-200">
@@ -923,17 +939,7 @@ const Admin = () => {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={async () => {
-                            if (window.confirm('Are you sure you want to delete this item?')) {
-                              try {
-                                await axios.delete(`${API}/merchandise/${item.id}`, getAuthHeader());
-                                toast.success('Item deleted');
-                                fetchData();
-                              } catch (error) {
-                                toast.error('Failed to delete item');
-                              }
-                            }
-                          }}
+                          onClick={() => setConfirmMerchDelete(item)}
                         >
                           Delete
                         </Button>
@@ -996,7 +1002,7 @@ const Admin = () => {
                               size="sm"
                               onClick={async () => {
                                 try {
-                                  await axios.put(`${API}/admin/orders/${order.id}/status`, { status: 'confirmed' }, getAuthHeader());
+                                  await axios.put(`${API}/admin/orders/${order.id}/status`, { status: 'confirmed' });
                                   toast.success('Order confirmed');
                                   fetchData();
                                 } catch (error) {
@@ -1011,7 +1017,7 @@ const Admin = () => {
                               variant="destructive"
                               onClick={async () => {
                                 try {
-                                  await axios.put(`${API}/admin/orders/${order.id}/status`, { status: 'cancelled' }, getAuthHeader());
+                                  await axios.put(`${API}/admin/orders/${order.id}/status`, { status: 'cancelled' });
                                   toast.success('Order cancelled');
                                   fetchData();
                                 } catch (error) {
@@ -1028,7 +1034,7 @@ const Admin = () => {
                             size="sm"
                             onClick={async () => {
                               try {
-                                await axios.put(`${API}/admin/orders/${order.id}/status`, { status: 'shipped' }, getAuthHeader());
+                                await axios.put(`${API}/admin/orders/${order.id}/status`, { status: 'shipped' });
                                 toast.success('Order marked as shipped');
                                 fetchData();
                               } catch (error) {
@@ -1044,7 +1050,7 @@ const Admin = () => {
                             size="sm"
                             onClick={async () => {
                               try {
-                                await axios.put(`${API}/admin/orders/${order.id}/status`, { status: 'delivered' }, getAuthHeader());
+                                await axios.put(`${API}/admin/orders/${order.id}/status`, { status: 'delivered' });
                                 toast.success('Order marked as delivered');
                                 fetchData();
                               } catch (error) {
@@ -1061,9 +1067,368 @@ const Admin = () => {
                 ))}
               </div>
             )}
+      </TabsContent>
+<TabsContent value="resources">
+  <AdminResources />
+</TabsContent>
+
+          {/* Volunteers Tab */}
+          <TabsContent value="volunteers">
+            <div className="space-y-4">
+              {volunteers.length === 0 ? (
+                <Card className="border-slate-200">
+                  <CardContent className="p-12 text-center text-slate-400">
+                    No volunteer registrations yet.
+                  </CardContent>
+                </Card>
+              ) : (
+                volunteers.map(v => (
+                  <Card key={v._id} className="border-slate-200">
+                    <CardContent className="p-5">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <span className="font-semibold text-slate-900">{v.full_name}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                              v.status === 'approved' ? 'bg-green-100 text-green-700' :
+                              v.status === 'rejected' ? 'bg-red-100 text-red-600' :
+                              'bg-amber-100 text-amber-700'
+                            }`}>{v.status}</span>
+                            <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{v.category}</span>
+                            {v.verified && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Verified</span>}
+                            {v.featured && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Featured</span>}
+                          </div>
+                          <p className="text-sm text-slate-500">{v.email}{v.phone ? ` · ${v.phone}` : ''}{v.city ? ` · ${v.city}` : ''}</p>
+                          {v.profession  && <p className="text-xs text-slate-500 mt-0.5">{v.profession}{v.institution ? ` · ${v.institution}` : ''}</p>}
+                          {v.skills?.length > 0 && <p className="text-xs text-slate-400 mt-0.5">Skills: {v.skills.join(', ')}</p>}
+                          {v.languages?.length > 0 && <p className="text-xs text-slate-400 mt-0.5">Languages: {v.languages.join(', ')}</p>}
+                          {v.availability && <p className="text-xs text-slate-400 mt-0.5">Availability: {v.availability.replace('_', ' ')}</p>}
+                          <p className="text-sm text-slate-700 mt-2 line-clamp-2">{v.how_can_help}</p>
+                          {v.admin_notes && <p className="text-xs text-slate-400 mt-1 italic">Note: {v.admin_notes}</p>}
+                        </div>
+                        <div className="flex flex-col gap-2 flex-shrink-0">
+                          <div className="flex gap-2">
+                            {v.status !== 'approved' && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await axios.put(`${API}/admin/volunteers/${v._id}/moderate`, { status: 'approved' });
+                                    setVolunteers(prev => prev.map(x => x._id === v._id ? { ...x, status: 'approved' } : x));
+                                  } catch { toast.error('Failed to approve'); }
+                                }}
+                                className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700"
+                              >Approve</button>
+                            )}
+                            {v.status !== 'rejected' && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await axios.put(`${API}/admin/volunteers/${v._id}/moderate`, { status: 'rejected' });
+                                    setVolunteers(prev => prev.map(x => x._id === v._id ? { ...x, status: 'rejected' } : x));
+                                  } catch { toast.error('Failed to reject'); }
+                                }}
+                                className="px-3 py-1.5 text-xs border border-red-300 text-red-600 rounded-md hover:bg-red-50"
+                              >Reject</button>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await axios.put(`${API}/admin/volunteers/${v._id}/verify`);
+                                  setVolunteers(prev => prev.map(x => x._id === v._id ? { ...x, verified: res.data.verified } : x));
+                                } catch { toast.error('Failed to update'); }
+                              }}
+                              className="px-3 py-1.5 text-xs border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50"
+                            >{v.verified ? 'Unverify' : 'Verify'}</button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await axios.delete(`${API}/admin/volunteers/${v._id}`);
+                                  setVolunteers(prev => prev.filter(x => x._id !== v._id));
+                                } catch { toast.error('Failed to delete'); }
+                              }}
+                              className="px-3 py-1.5 text-xs border border-slate-200 text-slate-500 rounded-md hover:bg-slate-50"
+                            >Delete</button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
           </TabsContent>
-        </Tabs>
-      </div>
+
+          {/* Researchers Tab */}
+          <TabsContent value="researchers">
+            <div className="space-y-4">
+              {researchers.length === 0 ? (
+                <Card className="border-slate-200">
+                  <CardContent className="p-12 text-center text-slate-400">
+                    No researcher registrations yet.
+                  </CardContent>
+                </Card>
+              ) : (
+                researchers.map(r => (
+                  <Card key={r._id} className="border-slate-200">
+                    <CardContent className="p-5">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <span className="font-semibold text-slate-900">{r.full_name}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                              r.status === 'approved' ? 'bg-green-100 text-green-700' :
+                              r.status === 'rejected' ? 'bg-red-100 text-red-600' :
+                              'bg-amber-100 text-amber-700'
+                            }`}>{r.status}</span>
+                            {r.verified && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Verified</span>}
+                            {r.featured && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Featured</span>}
+                            {r.open_to_collaborate && <span className="text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded-full">Open to collaborate</span>}
+                          </div>
+                          <p className="text-sm text-slate-500">{r.email}{r.phone ? ` · ${r.phone}` : ''}</p>
+                          {(r.designation || r.institution) && (
+                            <p className="text-xs text-slate-500 mt-0.5">{[r.designation, r.institution, r.department].filter(Boolean).join(' · ')}</p>
+                          )}
+                          {r.qualification && <p className="text-xs text-slate-400 mt-0.5">{r.qualification}{r.experience_years ? ` · ${r.experience_years} yrs` : ''}</p>}
+                          {r.research_domains?.length > 0 && <p className="text-xs text-slate-400 mt-0.5">Domains: {r.research_domains.join(', ')}</p>}
+                          {r.languages?.length > 0 && <p className="text-xs text-slate-400 mt-0.5">Languages: {r.languages.join(', ')}</p>}
+                          {r.how_can_help && <p className="text-sm text-slate-700 mt-2 line-clamp-2">{r.how_can_help}</p>}
+                          {r.admin_notes && <p className="text-xs text-slate-400 mt-1 italic">Note: {r.admin_notes}</p>}
+                        </div>
+                        <div className="flex flex-col gap-2 flex-shrink-0">
+                          <div className="flex gap-2">
+                            {r.status !== 'approved' && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await axios.put(`${API}/admin/researchers/${r._id}/moderate`, { status: 'approved' });
+                                    setResearchers(prev => prev.map(x => x._id === r._id ? { ...x, status: 'approved' } : x));
+                                  } catch { toast.error('Failed to approve'); }
+                                }}
+                                className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700"
+                              >Approve</button>
+                            )}
+                            {r.status !== 'rejected' && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await axios.put(`${API}/admin/researchers/${r._id}/moderate`, { status: 'rejected' });
+                                    setResearchers(prev => prev.map(x => x._id === r._id ? { ...x, status: 'rejected' } : x));
+                                  } catch { toast.error('Failed to reject'); }
+                                }}
+                                className="px-3 py-1.5 text-xs border border-red-300 text-red-600 rounded-md hover:bg-red-50"
+                              >Reject</button>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await axios.put(`${API}/admin/researchers/${r._id}/verify`);
+                                  setResearchers(prev => prev.map(x => x._id === r._id ? { ...x, verified: res.data.verified } : x));
+                                } catch { toast.error('Failed to update'); }
+                              }}
+                              className="px-3 py-1.5 text-xs border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50"
+                            >{r.verified ? 'Unverify' : 'Verify'}</button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await axios.delete(`${API}/admin/researchers/${r._id}`);
+                                  setResearchers(prev => prev.filter(x => x._id !== r._id));
+                                } catch { toast.error('Failed to delete'); }
+                              }}
+                              className="px-3 py-1.5 text-xs border border-slate-200 text-slate-500 rounded-md hover:bg-slate-50"
+                            >Delete</button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Journalists Tab */}
+          <TabsContent value="journalists">
+            <div className="space-y-4">
+              {journalists.length === 0 ? (
+                <Card className="border-slate-200">
+                  <CardContent className="p-12 text-center text-slate-400">
+                    No journalist registrations yet.
+                  </CardContent>
+                </Card>
+              ) : (
+                journalists.map(j => (
+                  <Card key={j._id} className="border-slate-200">
+                    <CardContent className="p-5">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <span className="font-semibold text-slate-900">{j.full_name}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                              j.status === 'approved' ? 'bg-green-100 text-green-700' :
+                              j.status === 'rejected' ? 'bg-red-100 text-red-600' :
+                              'bg-amber-100 text-amber-700'
+                            }`}>{j.status}</span>
+                            {j.verified && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Verified</span>}
+                            {j.featured && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Featured</span>}
+                          </div>
+                          <p className="text-sm text-slate-500">{j.email}{j.phone ? ` · ${j.phone}` : ''}</p>
+                          {(j.designation || j.publication) && (
+                            <p className="text-xs text-slate-500 mt-0.5">{[j.designation, j.publication].filter(Boolean).join(' · ')}</p>
+                          )}
+                          {j.beats?.length > 0 && <p className="text-xs text-slate-400 mt-0.5">Beats: {j.beats.join(', ')}</p>}
+                          {j.medium?.length > 0 && <p className="text-xs text-slate-400 mt-0.5">Medium: {j.medium.join(', ')}</p>}
+                          {j.languages?.length > 0 && <p className="text-xs text-slate-400 mt-0.5">Languages: {j.languages.join(', ')}</p>}
+                          {j.how_can_help && <p className="text-sm text-slate-700 mt-2 line-clamp-2">{j.how_can_help}</p>}
+                          {j.admin_notes && <p className="text-xs text-slate-400 mt-1 italic">Note: {j.admin_notes}</p>}
+                        </div>
+                        <div className="flex flex-col gap-2 flex-shrink-0">
+                          <div className="flex gap-2">
+                            {j.status !== 'approved' && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await axios.put(`${API}/admin/journalists/${j._id}/moderate`, { status: 'approved' });
+                                    setJournalists(prev => prev.map(x => x._id === j._id ? { ...x, status: 'approved' } : x));
+                                  } catch { toast.error('Failed to approve'); }
+                                }}
+                                className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700"
+                              >Approve</button>
+                            )}
+                            {j.status !== 'rejected' && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await axios.put(`${API}/admin/journalists/${j._id}/moderate`, { status: 'rejected' });
+                                    setJournalists(prev => prev.map(x => x._id === j._id ? { ...x, status: 'rejected' } : x));
+                                  } catch { toast.error('Failed to reject'); }
+                                }}
+                                className="px-3 py-1.5 text-xs border border-red-300 text-red-600 rounded-md hover:bg-red-50"
+                              >Reject</button>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await axios.put(`${API}/admin/journalists/${j._id}/verify`);
+                                  setJournalists(prev => prev.map(x => x._id === j._id ? { ...x, verified: res.data.verified } : x));
+                                } catch { toast.error('Failed to update'); }
+                              }}
+                              className="px-3 py-1.5 text-xs border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50"
+                            >{j.verified ? 'Unverify' : 'Verify'}</button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await axios.delete(`${API}/admin/journalists/${j._id}`);
+                                  setJournalists(prev => prev.filter(x => x._id !== j._id));
+                                } catch { toast.error('Failed to delete'); }
+                              }}
+                              className="px-3 py-1.5 text-xs border border-slate-200 text-slate-500 rounded-md hover:bg-slate-50"
+                            >Delete</button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Doctors Tab */}
+          <TabsContent value="doctors">
+            <div className="space-y-4">
+              {doctors.length === 0 ? (
+                <Card className="border-slate-200">
+                  <CardContent className="p-12 text-center text-slate-400">
+                    No doctor registrations yet.
+                  </CardContent>
+                </Card>
+              ) : (
+                doctors.map(d => (
+                  <Card key={d._id} className="border-slate-200">
+                    <CardContent className="p-5">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <span className="font-semibold text-slate-900">{d.full_name}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                              d.status === 'approved' ? 'bg-green-100 text-green-700' :
+                              d.status === 'rejected' ? 'bg-red-100 text-red-600' :
+                              'bg-amber-100 text-amber-700'
+                            }`}>{d.status}</span>
+                            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{d.specialization}</span>
+                            {d.verified && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Verified</span>}
+                            {d.featured && <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Featured</span>}
+                          </div>
+                          <p className="text-sm text-slate-500">{d.email}{d.phone ? ` · ${d.phone}` : ''}{d.city ? ` · ${d.city}` : ''}{d.state ? `, ${d.state}` : ''}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{d.qualification} · {d.experience_years} yrs exp{d.hospital ? ` · ${d.hospital}` : ''}</p>
+                          {d.medical_council_reg && <p className="text-xs text-slate-400 mt-0.5">Reg: {d.medical_council_reg}{d.medical_council_state ? ` (${d.medical_council_state})` : ''}</p>}
+                          {d.research_interests?.length > 0 && <p className="text-xs text-slate-400 mt-0.5">Research: {d.research_interests.join(', ')}</p>}
+                          {d.languages?.length > 0 && <p className="text-xs text-slate-400 mt-0.5">Languages: {d.languages.join(', ')}</p>}
+                          {d.admin_notes && <p className="text-xs text-slate-400 mt-1 italic">Note: {d.admin_notes}</p>}
+                        </div>
+                        <div className="flex flex-col gap-2 flex-shrink-0">
+                          <div className="flex gap-2">
+                            {d.status !== 'approved' && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await axios.put(`${API}/admin/doctors/${d._id}/moderate`, { status: 'approved' });
+                                    setDoctors(prev => prev.map(x => x._id === d._id ? { ...x, status: 'approved' } : x));
+                                  } catch { toast.error('Failed to approve'); }
+                                }}
+                                className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700"
+                              >Approve</button>
+                            )}
+                            {d.status !== 'rejected' && (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await axios.put(`${API}/admin/doctors/${d._id}/moderate`, { status: 'rejected' });
+                                    setDoctors(prev => prev.map(x => x._id === d._id ? { ...x, status: 'rejected' } : x));
+                                  } catch { toast.error('Failed to reject'); }
+                                }}
+                                className="px-3 py-1.5 text-xs border border-red-300 text-red-600 rounded-md hover:bg-red-50"
+                              >Reject</button>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await axios.put(`${API}/admin/doctors/${d._id}/verify`);
+                                  setDoctors(prev => prev.map(x => x._id === d._id ? { ...x, verified: res.data.verified } : x));
+                                } catch { toast.error('Failed to update'); }
+                              }}
+                              className="px-3 py-1.5 text-xs border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50"
+                            >{d.verified ? 'Unverify' : 'Verify'}</button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await axios.delete(`${API}/admin/doctors/${d._id}`);
+                                  setDoctors(prev => prev.filter(x => x._id !== d._id));
+                                } catch { toast.error('Failed to delete'); }
+                              }}
+                              className="px-3 py-1.5 text-xs border border-slate-200 text-slate-500 rounded-md hover:bg-slate-50"
+                            >Delete</button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+</Tabs>
+
+</div>
 
       {/* Merchandise Dialog */}
       <Dialog open={merchandiseDialog.open} onOpenChange={(open) => !open && setMerchandiseDialog({ open: false, item: null })}>
@@ -1083,10 +1448,10 @@ const Admin = () => {
                 is_active: merchForm.is_active
               };
               if (merchandiseDialog.item) {
-                await axios.put(`${API}/merchandise/${merchandiseDialog.item.id}`, data, getAuthHeader());
+                await axios.put(`${API}/merchandise/${merchandiseDialog.item.id}`, data);
                 toast.success('Item updated');
               } else {
-                await axios.post(`${API}/merchandise`, data, getAuthHeader());
+                await axios.post(`${API}/merchandise`, data);
                 toast.success('Item created');
               }
               setMerchandiseDialog({ open: false, item: null });
@@ -1168,7 +1533,6 @@ const Admin = () => {
                       formData.append('file', file);
                       try {
                         await axios.post(`${API}/merchandise/${merchandiseDialog.item.id}/image`, formData, {
-                          ...getAuthHeader(),
                           headers: { 'Content-Type': 'multipart/form-data' }
                         });
                         toast.success('Image uploaded');
@@ -1283,8 +1647,7 @@ const Admin = () => {
                 {
                   ...advocateForm,
                   experience_years: parseInt(advocateForm.experience_years)
-                },
-                getAuthHeader()
+                }
               );
               toast.success('Advocate profile updated successfully');
               setAdvocateDialog({ open: false, advocate: null });

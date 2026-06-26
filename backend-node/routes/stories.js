@@ -1,277 +1,133 @@
+const logger = require('../utils/logger');
 const express = require('express');
 const router = express.Router();
-const path = require('path');
-const fs = require('fs');
-const Story = require('../models/Story');
+const storyService = require('../services/storyService');
 const { getCurrentUser } = require('../middleware/auth');
 const { upload, uploadDocument } = require('../utils/upload');
+const { validate, schemas } = require('../utils/validate');
 
-// Create story
-router.post('/stories', getCurrentUser, async (req, res) => {
+router.post('/stories', getCurrentUser, validate(schemas.story), async (req, res) => {
   try {
-    const { title, incident_date, hospital_name, location, description, outcome } = req.body;
-    
-    const story = await Story.create({
-      user_id: req.user.id,
-      user_name: req.user.full_name,
-      title,
-      incident_date,
-      hospital_name,
-      location,
-      description,
-      outcome
-    });
-
+    const story = await storyService.create(req.user.id, req.user.full_name, req.body);
     res.json(story);
   } catch (error) {
-    console.error('Create story error:', error);
+    logger.error({ err: error }, 'Create story error:');
     res.status(500).json({ detail: 'Failed to create story' });
   }
 });
 
-// Upload story image
 router.post('/stories/:storyId/images', getCurrentUser, upload.single('file'), async (req, res) => {
   try {
-    const story = await Story.findOne({ id: req.params.storyId, user_id: req.user.id });
-    if (!story) {
-      return res.status(404).json({ detail: 'Story not found' });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({ detail: 'No file provided' });
-    }
-
-    // Generate URL path for the uploaded file
-    const imageUrl = `/uploads/images/stories/${req.file.filename}`;
-
-    // Initialize images array if it doesn't exist
-    if (!story.images) {
-      story.images = [];
-    }
-
-    story.images.push(imageUrl);
-    story.updated_at = new Date().toISOString();
-    await story.save();
-
+    if (!req.file) return res.status(400).json({ detail: 'No file provided' });
+    const story = await storyService.addImage(req.params.storyId, req.user.id, req.file.filename);
+    if (!story) return res.status(404).json({ detail: 'Story not found' });
     res.json({ message: 'Image uploaded successfully', image_count: story.images.length });
   } catch (error) {
-    console.error('Upload image error:', error);
+    logger.error({ err: error }, 'Upload image error:');
     res.status(500).json({ detail: 'Failed to upload image' });
   }
 });
 
-// Upload story document (PDF)
 router.post('/stories/:storyId/document', getCurrentUser, uploadDocument.single('file'), async (req, res) => {
   try {
-    const story = await Story.findOne({ id: req.params.storyId, user_id: req.user.id });
-    if (!story) {
-      return res.status(404).json({ detail: 'Story not found' });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({ detail: 'No file provided' });
-    }
-
-    const { title } = req.body;
-    const documentUrl = `/uploads/documents/stories/${req.file.filename}`;
-
-    // Initialize documents array if it doesn't exist
-    if (!story.documents) {
-      story.documents = [];
-    }
-
-    story.documents.push({
-      filename: req.file.originalname,
-      url: documentUrl,
-      title: title || req.file.originalname,
-      uploaded_at: new Date().toISOString()
-    });
-
-    story.updated_at = new Date().toISOString();
-    await story.save();
-
-    res.json({ message: 'Document uploaded successfully', document: story.documents[story.documents.length - 1] });
+    if (!req.file) return res.status(400).json({ detail: 'No file provided' });
+    const doc = await storyService.addDocument(req.params.storyId, req.user.id, req.file, req.body.title);
+    if (!doc) return res.status(404).json({ detail: 'Story not found' });
+    res.json({ message: 'Document uploaded successfully', document: doc });
   } catch (error) {
-    console.error('Upload document error:', error);
+    logger.error({ err: error }, 'Upload document error:');
     res.status(500).json({ detail: error.message || 'Failed to upload document' });
   }
 });
 
-// Add external link to story
 router.post('/stories/:storyId/link', getCurrentUser, async (req, res) => {
   try {
-    const story = await Story.findOne({ id: req.params.storyId, user_id: req.user.id });
-    if (!story) {
-      return res.status(404).json({ detail: 'Story not found' });
-    }
-
     const { title, url, type } = req.body;
-
-    if (!title || !url) {
-      return res.status(400).json({ detail: 'Title and URL are required' });
-    }
-
-    // Validate URL
-    try {
-      new URL(url);
-    } catch {
-      return res.status(400).json({ detail: 'Invalid URL format' });
-    }
-
-    // Initialize external_links array if it doesn't exist
-    if (!story.external_links) {
-      story.external_links = [];
-    }
-
-    story.external_links.push({
-      title,
-      url,
-      type: type || 'other'
-    });
-
-    story.updated_at = new Date().toISOString();
-    await story.save();
-
-    res.json({ message: 'Link added successfully', link: story.external_links[story.external_links.length - 1] });
+    if (!title || !url) return res.status(400).json({ detail: 'Title and URL are required' });
+    try { new URL(url); } catch { return res.status(400).json({ detail: 'Invalid URL format' }); }
+    const link = await storyService.addLink(req.params.storyId, req.user.id, { title, url, type });
+    if (!link) return res.status(404).json({ detail: 'Story not found' });
+    res.json({ message: 'Link added successfully', link });
   } catch (error) {
-    console.error('Add link error:', error);
+    logger.error({ err: error }, 'Add link error:');
     res.status(500).json({ detail: 'Failed to add link' });
   }
 });
 
-// Delete story document
 router.delete('/stories/:storyId/document/:documentUrl', getCurrentUser, async (req, res) => {
   try {
-    const story = await Story.findOne({ id: req.params.storyId, user_id: req.user.id });
-    if (!story) {
-      return res.status(404).json({ detail: 'Story not found' });
-    }
-
     const documentUrl = decodeURIComponent(req.params.documentUrl);
-    
-    if (story.documents) {
-      // Remove document from array
-      story.documents = story.documents.filter(doc => doc.url !== documentUrl);
-      
-      // Delete file from filesystem
-      const filePath = path.join(__dirname, '..', 'public', documentUrl.replace('/uploads/', 'uploads/'));
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-      
-      story.updated_at = new Date().toISOString();
-      await story.save();
-    }
-
+    const story = await storyService.removeDocument(req.params.storyId, req.user.id, documentUrl);
+    if (!story) return res.status(404).json({ detail: 'Story not found' });
     res.json({ message: 'Document deleted successfully' });
   } catch (error) {
-    console.error('Delete document error:', error);
+    logger.error({ err: error }, 'Delete document error:');
     res.status(500).json({ detail: 'Failed to delete document' });
   }
 });
 
-// Delete story external link
 router.delete('/stories/:storyId/link/:linkIndex', getCurrentUser, async (req, res) => {
   try {
-    const story = await Story.findOne({ id: req.params.storyId, user_id: req.user.id });
-    if (!story) {
-      return res.status(404).json({ detail: 'Story not found' });
-    }
-
-    const linkIndex = parseInt(req.params.linkIndex);
-    
-    if (story.external_links && story.external_links[linkIndex]) {
-      story.external_links.splice(linkIndex, 1);
-      story.updated_at = new Date().toISOString();
-      await story.save();
-    }
-
+    const story = await storyService.removeLink(req.params.storyId, req.user.id, parseInt(req.params.linkIndex));
+    if (!story) return res.status(404).json({ detail: 'Story not found' });
     res.json({ message: 'Link deleted successfully' });
   } catch (error) {
-    console.error('Delete link error:', error);
+    logger.error({ err: error }, 'Delete link error:');
     res.status(500).json({ detail: 'Failed to delete link' });
   }
 });
 
-// Get my stories
 router.get('/stories/my', getCurrentUser, async (req, res) => {
   try {
-    const stories = await Story.find({ user_id: req.user.id }).sort({ created_at: -1 }).limit(100);
+    const stories = await storyService.getByUser(req.user.id);
     res.json(stories);
   } catch (error) {
-    console.error('Get my stories error:', error);
+    logger.error({ err: error }, 'Get my stories error:');
     res.status(500).json({ detail: 'Failed to fetch stories' });
   }
 });
 
-// Get approved stories (public)
 router.get('/stories/approved', async (req, res) => {
   try {
-    const stories = await Story.find({ status: 'approved' }).sort({ created_at: -1 }).limit(100);
+    const stories = await storyService.getApproved();
     res.json(stories);
   } catch (error) {
-    console.error('Get approved stories error:', error);
+    logger.error({ err: error }, 'Get approved stories error:');
     res.status(500).json({ detail: 'Failed to fetch stories' });
   }
 });
 
-// Update story (must come before GET /:storyId to avoid conflicts)
 router.put('/stories/:storyId', getCurrentUser, async (req, res) => {
   try {
-    const story = await Story.findOne({ id: req.params.storyId, user_id: req.user.id });
-    if (!story) {
-      return res.status(404).json({ detail: 'Story not found' });
-    }
-
-    const { title, incident_date, hospital_name, location, description, outcome } = req.body;
-    
-    if (title) story.title = title;
-    if (incident_date) story.incident_date = incident_date;
-    if (hospital_name) story.hospital_name = hospital_name;
-    if (location) story.location = location;
-    if (description) story.description = description;
-    if (outcome !== undefined) story.outcome = outcome;
-    
-    story.status = 'pending'; // Reset to pending after edit
-    story.updated_at = new Date().toISOString();
-    await story.save();
-
+    const story = await storyService.update(req.params.storyId, req.user.id, req.body);
+    if (!story) return res.status(404).json({ detail: 'Story not found' });
     res.json(story);
   } catch (error) {
-    console.error('Update story error:', error);
+    logger.error({ err: error }, 'Update story error:');
     res.status(500).json({ detail: 'Failed to update story' });
   }
 });
 
-// Get story by ID
 router.get('/stories/:storyId', async (req, res) => {
   try {
-    const story = await Story.findOne({ id: req.params.storyId });
-    if (!story) {
-      return res.status(404).json({ detail: 'Story not found' });
-    }
+    const story = await storyService.getById(req.params.storyId);
+    if (!story) return res.status(404).json({ detail: 'Story not found' });
     res.json(story);
   } catch (error) {
-    console.error('Get story error:', error);
+    logger.error({ err: error }, 'Get story error:');
     res.status(500).json({ detail: 'Failed to fetch story' });
   }
 });
 
-// Delete story
 router.delete('/stories/:storyId', getCurrentUser, async (req, res) => {
   try {
-    const story = await Story.findOne({ id: req.params.storyId, user_id: req.user.id });
-    if (!story) {
-      return res.status(404).json({ detail: 'Story not found' });
-    }
-
-    await Story.deleteOne({ id: req.params.storyId });
+    const deleted = await storyService.remove(req.params.storyId, req.user.id);
+    if (!deleted) return res.status(404).json({ detail: 'Story not found' });
     res.json({ message: 'Story deleted successfully' });
   } catch (error) {
-    console.error('Delete story error:', error);
+    logger.error({ err: error }, 'Delete story error:');
     res.status(500).json({ detail: 'Failed to delete story' });
   }
 });
 
 module.exports = router;
-

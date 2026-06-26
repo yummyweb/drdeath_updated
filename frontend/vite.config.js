@@ -13,7 +13,6 @@ function jsxInJsPlugin() {
       if (!id.includes('/src/') || !id.endsWith('.js')) return null;
       try {
         const code = readFileSync(id, 'utf-8');
-        if (!code.includes('<') && !code.includes('>')) return null;
         const out = transformSync(code, { loader: 'jsx', jsx: 'automatic', format: 'esm', target: 'es2020' });
         return { code: out.code, map: out.map };
       } catch {
@@ -39,6 +38,18 @@ export default defineConfig({
     strictPort: true,
     host: true,
     open: true,
+    proxy: {
+      '/api': {
+        target: process.env.VITE_BACKEND_URL || 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false
+      },
+      '/uploads': {
+        target: process.env.VITE_BACKEND_URL || 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   },
   preview: {
     port: 3000,

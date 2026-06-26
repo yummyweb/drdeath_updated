@@ -1,3 +1,4 @@
+const logger = require('../utils/logger');
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
@@ -59,7 +60,7 @@ router.post('/orders', getOptionalUser, async (req, res) => {
 
     res.json(order);
   } catch (error) {
-    console.error('Create order error:', error);
+    logger.error({ err: error }, 'Create order error:');
     res.status(500).json({ detail: 'Failed to create order' });
   }
 });
@@ -70,7 +71,7 @@ router.get('/orders/my', getCurrentUser, async (req, res) => {
     const orders = await Order.find({ user_id: req.user.id }).sort({ created_at: -1 }).limit(100);
     res.json(orders);
   } catch (error) {
-    console.error('Get my orders error:', error);
+    logger.error({ err: error }, 'Get my orders error:');
     res.status(500).json({ detail: 'Failed to fetch orders' });
   }
 });
@@ -86,7 +87,7 @@ router.get('/admin/orders', getCurrentUser, requireAdmin, async (req, res) => {
     const orders = await Order.find(query).sort({ created_at: -1 }).limit(500);
     res.json(orders);
   } catch (error) {
-    console.error('Admin get orders error:', error);
+    logger.error({ err: error }, 'Admin get orders error:');
     res.status(500).json({ detail: 'Failed to fetch orders' });
   }
 });
@@ -123,7 +124,7 @@ router.put('/admin/orders/:orderId/status', getCurrentUser, requireAdmin, async 
 
     res.json(order);
   } catch (error) {
-    console.error('Update order status error:', error);
+    logger.error({ err: error }, 'Update order status error:');
     res.status(500).json({ detail: 'Failed to update order status' });
   }
 });

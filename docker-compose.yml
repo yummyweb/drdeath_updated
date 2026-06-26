@@ -1,0 +1,37 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: ./backend-node
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: ./backend-node/.env
+    volumes:
+      - uploads:/app/public/uploads
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - certs:/etc/nginx/certs:ro   # mount TLS certs — see README for cert generation
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  uploads:
+  certs:

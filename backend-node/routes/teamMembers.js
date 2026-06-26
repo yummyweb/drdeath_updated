@@ -1,3 +1,4 @@
+const logger = require('../utils/logger');
 const express = require('express');
 const router = express.Router();
 const path = require('path');
@@ -12,7 +13,7 @@ router.get('/team-members', async (req, res) => {
     const members = await TeamMember.find().sort({ order: 1, created_at: -1 });
     res.json(members);
   } catch (error) {
-    console.error('Get team members error:', error);
+    logger.error({ err: error }, 'Get team members error:');
     res.status(500).json({ detail: 'Failed to fetch team members' });
   }
 });
@@ -26,7 +27,7 @@ router.get('/team-members/:memberId', async (req, res) => {
     }
     res.json(member);
   } catch (error) {
-    console.error('Get team member error:', error);
+    logger.error({ err: error }, 'Get team member error:');
     res.status(500).json({ detail: 'Failed to fetch team member' });
   }
 });
@@ -47,7 +48,7 @@ router.post('/team-members', getCurrentUser, requireAdmin, async (req, res) => {
 
     res.json(member);
   } catch (error) {
-    console.error('Create team member error:', error);
+    logger.error({ err: error }, 'Create team member error:');
     res.status(500).json({ detail: 'Failed to create team member' });
   }
 });
@@ -74,7 +75,7 @@ router.put('/team-members/:memberId', getCurrentUser, requireAdmin, async (req, 
 
     res.json(member);
   } catch (error) {
-    console.error('Update team member error:', error);
+    logger.error({ err: error }, 'Update team member error:');
     res.status(500).json({ detail: 'Failed to update team member' });
   }
 });
@@ -108,7 +109,7 @@ router.post('/team-members/:memberId/image', getCurrentUser, requireAdmin, uploa
 
     res.json({ message: 'Image uploaded successfully', image_url: imageUrl });
   } catch (error) {
-    console.error('Upload team member image error:', error);
+    logger.error({ err: error }, 'Upload team member image error:');
     res.status(500).json({ detail: 'Failed to upload image' });
   }
 });
@@ -122,7 +123,7 @@ router.delete('/team-members/:memberId', getCurrentUser, requireAdmin, async (re
     }
     res.json({ message: 'Team member deleted successfully' });
   } catch (error) {
-    console.error('Delete team member error:', error);
+    logger.error({ err: error }, 'Delete team member error:');
     res.status(500).json({ detail: 'Failed to delete team member' });
   }
 });

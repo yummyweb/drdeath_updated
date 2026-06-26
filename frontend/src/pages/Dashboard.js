@@ -5,18 +5,20 @@ import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { 
-  Plus, 
-  FileText, 
-  Clock, 
-  CheckCircle, 
+import {
+  Plus,
+  FileText,
+  Clock,
+  CheckCircle,
   XCircle,
   Eye,
   Edit,
   Trash2,
   User,
   IndianRupee,
-  Scale
+  Scale,
+  Bell,
+  AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -35,7 +37,7 @@ import { getApiUrl } from '@/config/env';
 const API = getApiUrl();
 
 const Dashboard = () => {
-  const { user, getAuthHeader, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [stories, setStories] = useState([]);
   const [grants, setGrants] = useState([]);
@@ -44,18 +46,17 @@ const Dashboard = () => {
   const fetchData = useCallback(async () => {
     try {
       const [storiesRes, grantsRes] = await Promise.all([
-        axios.get(`${API}/stories/my`, getAuthHeader()),
-        axios.get(`${API}/grants/my`, getAuthHeader())
+        axios.get(`${API}/stories/my`),
+        axios.get(`${API}/grants/my`)
       ]);
       setStories(storiesRes.data);
       setGrants(grantsRes.data);
     } catch (error) {
-      console.error('Error fetching data:', error);
       toast.error('Failed to load your data');
     } finally {
       setLoading(false);
     }
-  }, [getAuthHeader]);
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -70,7 +71,7 @@ const Dashboard = () => {
 
   const handleDelete = async (storyId) => {
     try {
-      await axios.delete(`${API}/stories/${storyId}`, getAuthHeader());
+      await axios.delete(`${API}/stories/${storyId}`);
       setStories(prev => prev.filter(s => s.id !== storyId));
       toast.success('Story deleted successfully');
     } catch (error) {
@@ -125,11 +126,82 @@ const Dashboard = () => {
     );
   }
 
+  const actionedGrants = grants.filter(g => g.status === 'approved' || g.status === 'rejected');
+
   return (
     <div className="min-h-screen bg-slate-50" data-testid="dashboard-page">
+
+      {/* Email verification nudge */}
+      {user && user.email_verified === false && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center gap-3">
+          <Bell className="h-4 w-4 text-amber-600 flex-shrink-0" />
+          <p className="text-sm text-amber-800 flex-1">
+            <strong>Verify your email</strong> to submit stories and apply for Legal Aid.
+          </p>
+          <Link to="/verify-otp" className="flex-shrink-0 text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-900 px-3 py-1.5 rounded-md transition-colors">
+            Verify Now →
+          </Link>
+        </div>
+      )}
+
+      {/* Status-change notification banners */}
+      {actionedGrants.length > 0 && (
+        <div className="space-y-0">
+          {actionedGrants.map(grant => (
+            <div
+              key={grant.id}
+              className={`px-4 py-4 border-b flex items-start gap-4 ${
+                grant.status === 'approved'
+                  ? 'bg-green-50 border-green-200'
+                  : 'bg-red-50 border-red-200'
+              }`}
+            >
+              <div className={`flex-shrink-0 mt-0.5 ${grant.status === 'approved' ? 'text-green-600' : 'text-red-500'}`}>
+                {grant.status === 'approved'
+                  ? <CheckCircle className="h-5 w-5" />
+                  : <AlertTriangle className="h-5 w-5" />
+                }
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={`font-semibold text-sm ${grant.status === 'approved' ? 'text-green-800' : 'text-red-800'}`}>
+                  {grant.status === 'approved'
+                    ? '✓ Your Legal Aid application has been approved'
+                    : '✗ Your Legal Aid application was not approved'
+                  }
+                </p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Application: {grant.case_type} —{' '}
+                  {grant.moderated_at
+                    ? `Reviewed on ${new Date(grant.moderated_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                    : `Submitted ${new Date(grant.created_at).toLocaleDateString('en-IN')}`
+                  }
+                  {grant.moderated_by ? ` by ${grant.moderated_by}` : ''}
+                </p>
+                {grant.status === 'approved' && grant.amount_approved && (
+                  <p className="text-sm font-semibold text-green-700 mt-1">
+                    Approved assistance: ₹{grant.amount_approved.toLocaleString('en-IN')}
+                  </p>
+                )}
+                {grant.admin_notes && (
+                  <p className="text-sm text-slate-700 mt-1 italic">
+                    "{grant.admin_notes}"
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-primary text-white py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          {/* Back to site */}
+          <Link to="/" className="inline-flex items-center gap-1.5 text-slate-400 hover:text-white text-xs font-medium mb-4 transition-colors">
+            ← Back to VOICE
+          </Link>
+
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -142,11 +214,16 @@ const Dashboard = () => {
                 Welcome, {user?.full_name}
               </h1>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
+              <Link to="/">
+                <Button variant="outline" className="border-white/30 text-white hover:bg-white/10 text-xs">
+                  🏠 Home
+                </Button>
+              </Link>
               <Link to="/apply-grant" data-testid="apply-grant-btn">
                 <Button variant="outline" className="border-white text-white hover:bg-white/10">
                   <IndianRupee className="h-4 w-4 mr-2" />
-                  Apply for Grant
+                  Apply for Legal Aid
                 </Button>
               </Link>
               <Link to="/submit-story" data-testid="submit-story-btn">
@@ -168,8 +245,8 @@ const Dashboard = () => {
             { label: 'Pending', value: stats.pending, icon: <Clock className="h-5 w-5" />, color: 'text-amber-600' },
             { label: 'Approved', value: stats.approved, icon: <CheckCircle className="h-5 w-5" />, color: 'text-green-600' },
             { label: 'Rejected', value: stats.rejected, icon: <XCircle className="h-5 w-5" />, color: 'text-red-600' },
-            { label: 'Grants Pending', value: stats.grantsPending, icon: <IndianRupee className="h-5 w-5" />, color: 'text-amber-600' },
-            { label: 'Grants Approved', value: stats.grantsApproved, icon: <IndianRupee className="h-5 w-5" />, color: 'text-green-600' }
+            { label: 'Legal Aid Pending', value: stats.grantsPending, icon: <IndianRupee className="h-5 w-5" />, color: 'text-amber-600' },
+            { label: 'Legal Aid Approved', value: stats.grantsApproved, icon: <IndianRupee className="h-5 w-5" />, color: 'text-green-600' }
           ].map((stat, index) => (
             <Card key={index} className="border-slate-200" data-testid={`stat-${stat.label.toLowerCase().replace(' ', '-')}`}>
               <CardContent className="p-4">
@@ -282,21 +359,21 @@ const Dashboard = () => {
         )}
 
         {/* Grant Applications */}
-        <h2 className="font-serif text-xl font-bold text-primary mb-6 mt-12">Your Grant Applications</h2>
+        <h2 className="font-serif text-xl font-bold text-primary mb-6 mt-12">Your Legal Aid Applications</h2>
         
         {grants.length === 0 ? (
           <Card className="border-slate-200" data-testid="no-grants-card">
             <CardContent className="p-8 text-center">
               <IndianRupee className="h-12 w-12 text-slate-300 mx-auto mb-4" />
               <h3 className="font-serif text-lg font-bold text-primary mb-2">
-                No Grant Applications
+                No Legal Aid Applications
               </h3>
               <p className="text-slate-500 mb-4 text-sm">
-                If you need financial support for your legal case, apply for a grant.
+                If you need financial support for your legal case, apply for legal aid.
               </p>
               <Link to="/apply-grant">
                 <Button variant="outline" className="border-primary text-primary">
-                  Apply for Grant
+                  Apply for Legal Aid
                 </Button>
               </Link>
             </CardContent>
@@ -321,13 +398,23 @@ const Dashboard = () => {
                         {grant.purpose_of_funding} • {grant.current_stage}
                       </p>
                       {grant.status === 'approved' && grant.amount_approved && (
-                        <p className="text-sm text-green-600 mt-2 bg-green-50 p-2 border-l-2 border-green-600">
-                          Approved Amount: ₹{grant.amount_approved.toLocaleString('en-IN')}
+                        <p className="text-sm text-green-700 mt-2 bg-green-50 p-2 rounded border-l-2 border-green-500">
+                          Approved assistance: ₹{grant.amount_approved.toLocaleString('en-IN')}
                         </p>
                       )}
-                      {grant.admin_notes && grant.status === 'rejected' && (
-                        <p className="text-sm text-red-600 mt-2 bg-red-50 p-2 border-l-2 border-red-600">
-                          Note: {grant.admin_notes}
+                      {grant.admin_notes && (
+                        <p className={`text-sm mt-2 p-2 rounded border-l-2 ${
+                          grant.status === 'rejected'
+                            ? 'text-red-700 bg-red-50 border-red-400'
+                            : 'text-slate-700 bg-slate-50 border-slate-300'
+                        }`}>
+                          Admin note: {grant.admin_notes}
+                        </p>
+                      )}
+                      {grant.moderated_at && (
+                        <p className="text-xs text-slate-400 mt-1">
+                          Reviewed {new Date(grant.moderated_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {grant.moderated_by ? ` · ${grant.moderated_by}` : ''}
                         </p>
                       )}
                     </div>

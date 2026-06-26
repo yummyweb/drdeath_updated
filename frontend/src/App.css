@@ -71,7 +71,7 @@
     top: 10px;
     right: 10px;
     padding: 4px 12px;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'JetBrains Mono', 'Inter', monospace;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 2px;

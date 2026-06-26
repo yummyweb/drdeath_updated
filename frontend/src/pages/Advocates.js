@@ -1,261 +1,217 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { Card, CardContent } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Badge } from '../components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
-import { 
-  Search, 
-  MapPin, 
-  Clock, 
-  Phone, 
-  Mail,
-  UserPlus,
-  Scale,
-  Languages,
-  ArrowRight
-} from 'lucide-react';
+import { Scale, MapPin, Search, Clock, Languages, ArrowRight, UserPlus, Globe, Linkedin, BadgeCheck } from 'lucide-react';
 import { getApiUrl } from '@/config/env';
 
 const API = getApiUrl();
 
 const INDIAN_STATES = [
-  'All Locations',
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
   'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
   'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram',
   'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
   'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
-  'Delhi', 'Chandigarh'
+  'Delhi', 'Chandigarh',
 ];
 
+function AdvocateCard({ a }) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-sm transition-shadow" data-testid={`advocate-card-${a.id}`}>
+      <div className="flex items-start gap-4">
+        {a.photo_url ? (
+          <img src={a.photo_url} alt={a.full_name} className="h-14 w-14 rounded-full object-cover flex-shrink-0" />
+        ) : (
+          <div className="h-14 w-14 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+            <Scale className="h-6 w-6 text-slate-400" />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-0.5">
+            <span className="font-semibold text-slate-900">{a.full_name}</span>
+            {a.verified && <BadgeCheck className="h-4 w-4 text-blue-500 flex-shrink-0" title="Verified" />}
+          </div>
+
+          <p className="text-xs text-slate-500 flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {a.experience_years} yr{a.experience_years !== 1 ? 's' : ''} experience
+          </p>
+
+          {(a.city || a.state) && (
+            <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+              <MapPin className="h-3 w-3" />
+              {[a.city, a.state].filter(Boolean).join(', ')}
+            </p>
+          )}
+
+          {a.specializations?.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {a.specializations.slice(0, 4).map(s => (
+                <span key={s} className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded">{s}</span>
+              ))}
+              {a.specializations.length > 4 && (
+                <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded">+{a.specializations.length - 4}</span>
+              )}
+            </div>
+          )}
+
+          {a.about && <p className="text-sm text-slate-600 mt-2 line-clamp-2">{a.about}</p>}
+
+          {a.areas_of_operation?.length > 0 && (
+            <p className="text-xs text-slate-400 mt-1 flex items-start gap-1">
+              <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
+              {a.areas_of_operation.slice(0, 3).join(', ')}{a.areas_of_operation.length > 3 ? ` +${a.areas_of_operation.length - 3}` : ''}
+            </p>
+          )}
+
+          {a.languages?.length > 0 && (
+            <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+              <Languages className="h-3 w-3" />
+              {a.languages.join(', ')}
+            </p>
+          )}
+
+          <div className="flex gap-3 mt-3">
+            {a.linkedin && (
+              <a href={a.linkedin} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-700">
+                <Linkedin className="h-4 w-4" />
+              </a>
+            )}
+            {a.website && (
+              <a href={a.website} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-slate-600">
+                <Globe className="h-4 w-4" />
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const Advocates = () => {
-  const [advocates, setAdvocates] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('All Locations');
+  const [advocates, setAdvocates]     = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch]           = useState('');
+  const [location, setLocation]       = useState('');
 
-  useEffect(() => {
-    fetchAdvocates();
-  }, []);
-
-  const fetchAdvocates = async (location = null, search = null) => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (location && location !== 'All Locations') params.append('location', location);
-      if (search) params.append('search', search);
-      
-      const response = await axios.get(`${API}/advocates?${params.toString()}`);
-      setAdvocates(response.data);
-    } catch (error) {
-      console.error('Error fetching advocates:', error);
+      const params = { limit: 50 };
+      if (search)   params.search   = search;
+      if (location) params.location = location;
+      const res = await axios.get(`${API}/advocates`, { params });
+      // Handle both paginated { data } and legacy raw array
+      setAdvocates(res.data.data ?? res.data);
+    } catch {
+      setAdvocates([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, location]);
 
-  const handleSearch = () => {
-    fetchAdvocates(
-      selectedLocation !== 'All Locations' ? selectedLocation : null,
-      searchTerm || null
-    );
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
+  useEffect(() => { load(); }, [load]);
 
   return (
     <div data-testid="advocates-page">
-      {/* Hero Section */}
-      <section className="relative py-20 bg-primary" data-testid="advocates-hero">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-            <div className="max-w-2xl">
-              <p className="font-mono text-xs uppercase tracking-[0.3em] text-secondary mb-4">
-                Pro Bono Legal Support
-              </p>
-              <h1 className="font-serif text-4xl md:text-5xl font-bold text-white mb-6">
-                Advocate Directory
-              </h1>
-              <p className="text-lg text-slate-300 leading-relaxed">
-                Connect with experienced advocates who provide pro bono consultations 
-                for medical negligence cases. All initial consultations are free.
-              </p>
-            </div>
-            <Link to="/advocate-register" data-testid="register-advocate-btn">
-              <Button className="bg-secondary hover:bg-amber-700 text-white">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Register as Advocate
-              </Button>
-            </Link>
+
+      {/* Hero */}
+      <section className="bg-slate-900 text-white py-16 px-4" data-testid="advocates-hero">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+          <div>
+            <p className="text-xs font-mono uppercase tracking-widest text-amber-400 mb-2">Pro Bono Legal Support</p>
+            <h1 className="text-4xl font-bold mb-2">Advocate Directory</h1>
+            <p className="text-slate-300 max-w-xl">
+              Connect with experienced advocates who provide pro bono consultations for medical negligence cases.
+            </p>
           </div>
+          <Link
+            to="/advocate-register"
+            className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-5 py-2.5 rounded-md text-sm flex items-center gap-2 whitespace-nowrap"
+            data-testid="register-advocate-btn"
+          >
+            <UserPlus className="h-4 w-4" />
+            Register as Advocate
+          </Link>
         </div>
       </section>
 
-      {/* Search & Filter Section */}
-      <section className="py-8 bg-white border-b border-slate-200" data-testid="search-section">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row gap-4">
+      {/* Search */}
+      <section className="bg-white border-b border-slate-200 py-4 px-4" data-testid="search-section">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row gap-3">
+          <form
+            className="flex gap-2 flex-1"
+            onSubmit={e => { e.preventDefault(); setSearch(searchInput); }}
+          >
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
+              <input
                 type="text"
-                placeholder="Search by name or keyword..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="pl-10 bg-slate-50"
+                placeholder="Search by name or keyword…"
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
+                className="w-full pl-9 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
                 data-testid="advocate-search-input"
               />
             </div>
-            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-              <SelectTrigger className="w-full md:w-48 bg-slate-50" data-testid="location-filter">
-                <MapPin className="h-4 w-4 mr-2 text-slate-400" />
-                <SelectValue placeholder="Location" />
-              </SelectTrigger>
-              <SelectContent>
-                {INDIAN_STATES.map(state => (
-                  <SelectItem key={state} value={state}>{state}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={handleSearch} className="bg-primary hover:bg-slate-800" data-testid="search-btn">
-              <Search className="h-4 w-4 mr-2" />
+            <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-md text-sm hover:bg-slate-700">
               Search
-            </Button>
-          </div>
+            </button>
+          </form>
+
+          <select
+            value={location}
+            onChange={e => setLocation(e.target.value)}
+            className="border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+            data-testid="location-filter"
+          >
+            <option value="">All Locations</option>
+            {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
         </div>
       </section>
 
-      {/* Results Section */}
-      <section className="py-12 bg-slate-50" data-testid="advocates-grid">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-8">
-            <p className="text-slate-600">
-              {loading ? 'Loading...' : `${advocates.length} advocate${advocates.length !== 1 ? 's' : ''} found`}
-            </p>
-          </div>
+      {/* Results */}
+      <section className="py-10 px-4 bg-slate-50 min-h-64" data-testid="advocates-grid">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-sm text-slate-500 mb-6">
+            {loading ? 'Loading…' : `${advocates.length} advocate${advocates.length !== 1 ? 's' : ''} found`}
+          </p>
 
           {loading ? (
-            <div className="text-center py-20">
-              <div className="spinner mx-auto mb-4"></div>
-              <p className="text-slate-500">Loading advocates...</p>
-            </div>
+            <div className="text-center py-16 text-slate-400">Loading…</div>
           ) : advocates.length === 0 ? (
-            <div className="text-center py-20" data-testid="no-advocates">
-              <Scale className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="font-serif text-2xl font-bold text-primary mb-2">No Advocates Found</h3>
-              <p className="text-slate-500 mb-6">
-                Try adjusting your search filters or check back later.
-              </p>
-              <Link to="/advocate-register">
-                <Button className="bg-secondary hover:bg-amber-700">
-                  Register as Pro Bono Advocate
-                </Button>
+            <div className="text-center py-16 text-slate-400" data-testid="no-advocates">
+              <Scale className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+              <p className="mb-4">No advocates found.</p>
+              <Link to="/advocate-register" className="text-sm text-amber-700 hover:underline">
+                Be the first to register
               </Link>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {advocates.map((advocate) => (
-                <Card key={advocate.id} className="border-slate-200 hover:shadow-lg transition-shadow" data-testid={`advocate-card-${advocate.id}`}>
-                  <CardContent className="p-6">
-                    {/* Header */}
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="w-16 h-16 bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Scale className="h-8 w-8 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-serif text-lg font-bold text-primary truncate">
-                          {advocate.full_name}
-                        </h3>
-                        <p className="text-sm text-slate-500 flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {advocate.experience_years} years experience
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Specializations */}
-                    <div className="flex flex-wrap gap-1 mb-4">
-                      {advocate.specializations.slice(0, 3).map((spec, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-xs bg-secondary/10 text-secondary border-0">
-                          {spec}
-                        </Badge>
-                      ))}
-                      {advocate.specializations.length > 3 && (
-                        <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-600 border-0">
-                          +{advocate.specializations.length - 3}
-                        </Badge>
-                      )}
-                    </div>
-
-                    {/* About */}
-                    <p className="text-sm text-slate-600 line-clamp-2 mb-4">
-                      {advocate.about}
-                    </p>
-
-                    {/* Details */}
-                    <div className="space-y-2 text-sm text-slate-500 mb-4">
-                      <p className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-secondary" />
-                        <span className="truncate">{advocate.areas_of_operation.slice(0, 3).join(', ')}</span>
-                      </p>
-                      <p className="flex items-center gap-2">
-                        <Languages className="h-4 w-4 text-secondary" />
-                        {advocate.languages.join(', ')}
-                      </p>
-                    </div>
-
-                    {/* Contact */}
-                    <div className="flex gap-2 pt-4 border-t border-slate-100">
-                      <a href={`tel:${advocate.phone}`} className="flex-1">
-                        <Button variant="outline" size="sm" className="w-full border-slate-300">
-                          <Phone className="h-4 w-4 mr-1" />
-                          Call
-                        </Button>
-                      </a>
-                      <a href={`mailto:${advocate.email}`} className="flex-1">
-                        <Button variant="outline" size="sm" className="w-full border-slate-300">
-                          <Mail className="h-4 w-4 mr-1" />
-                          Email
-                        </Button>
-                      </a>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="grid sm:grid-cols-2 gap-4">
+              {advocates.map(a => <AdvocateCard key={a._id || a.id} a={a} />)}
             </div>
           )}
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 bg-white" data-testid="advocates-cta">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="font-serif text-2xl md:text-3xl font-bold text-primary mb-4">
-            Need Financial Support for Your Case?
-          </h2>
-          <p className="text-slate-600 mb-6">
-            If you cannot afford legal expenses, apply for a grant from our foundation. 
-            We support genuine victims of medical negligence.
+      {/* CTA */}
+      <section className="py-14 bg-white px-4" data-testid="advocates-cta">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className="text-2xl font-bold text-slate-900 mb-3">Need Financial Support for Your Case?</h2>
+          <p className="text-slate-500 mb-6">
+            If you cannot afford legal expenses, apply for legal aid from the VOICE foundation.
           </p>
-          <Link to="/apply-grant" data-testid="apply-grant-cta">
-            <Button size="lg" className="bg-secondary hover:bg-amber-700 text-white uppercase tracking-widest font-bold">
-              Apply for Grant
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+          <Link
+            to="/apply-grant"
+            className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-semibold px-6 py-3 rounded-md"
+            data-testid="apply-grant-cta"
+          >
+            Apply for Legal Aid
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>

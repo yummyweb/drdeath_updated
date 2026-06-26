@@ -1,11 +1,13 @@
+const logger = require('../utils/logger');
 const express = require('express');
 const router = express.Router();
 const Contact = require('../models/Contact');
 const Settings = require('../models/Settings');
 const { sendContactNotification, sendAutoReply } = require('../utils/email');
+const { validate, schemas } = require('../utils/validate');
 
 // Submit contact form
-router.post('/contact', async (req, res) => {
+router.post('/contact', validate(schemas.contact), async (req, res) => {
   try {
     const { name, email, phone, subject, message } = req.body;
     
@@ -29,18 +31,18 @@ router.post('/contact', async (req, res) => {
     // Send notification email to admin (non-blocking)
     if (adminEmail) {
       sendContactNotification(contact, adminEmail).catch(err => {
-        console.error('Failed to send notification email:', err);
+        logger.error({ err: err }, 'Failed to send notification email:');
       });
     }
 
     // Send auto-reply to user (non-blocking)
     sendAutoReply(contact).catch(err => {
-      console.error('Failed to send auto-reply email:', err);
+      logger.error({ err: err }, 'Failed to send auto-reply email:');
     });
 
     res.json(contact);
   } catch (error) {
-    console.error('Contact submission error:', error);
+    logger.error({ err: error }, 'Contact submission error:');
     res.status(500).json({ detail: 'Failed to submit contact form' });
   }
 });

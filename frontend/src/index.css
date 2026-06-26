@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,7 +6,7 @@
 
 body {
     margin: 0;
-    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -16,11 +16,11 @@ code {
 }
 
 .font-serif {
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: 'Merriweather', Georgia, serif;
 }
 
 .font-sans {
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 
 .font-mono {
@@ -29,31 +29,46 @@ code {
 
 @layer base {
     :root {
-        --background: 210 40% 98%;
-        --foreground: 222 84% 5%;
+        /* Warm White background — less clinical than pure white */
+        --background: 40 30% 97%;
+        --foreground: 222 45% 10%;
+
         --card: 0 0% 100%;
-        --card-foreground: 222 84% 5%;
+        --card-foreground: 222 45% 10%;
         --popover: 0 0% 100%;
-        --popover-foreground: 222 84% 5%;
-        --primary: 222 47% 11%;
-        --primary-foreground: 210 40% 98%;
-        --secondary: 32 95% 37%;
+        --popover-foreground: 222 45% 10%;
+
+        /* Deep Navy — authoritative, trustworthy */
+        --primary: 222 52% 18%;
+        --primary-foreground: 40 30% 97%;
+
+        /* Amber — secondary actions, highlights */
+        --secondary: 38 92% 40%;
         --secondary-foreground: 0 0% 100%;
-        --accent: 174 84% 29%;
+
+        /* Medical Teal — accent for links, active states */
+        --accent: 174 68% 32%;
         --accent-foreground: 0 0% 100%;
-        --muted: 215 16% 47%;
-        --muted-foreground: 215 16% 47%;
-        --destructive: 0 72% 51%;
+
+        --muted: 220 14% 92%;
+        --muted-foreground: 220 10% 46%;
+
+        /* Muted Red — errors */
+        --destructive: 0 65% 48%;
         --destructive-foreground: 0 0% 98%;
-        --border: 214 32% 91%;
-        --input: 214 32% 91%;
-        --ring: 222 47% 11%;
-        --radius: 0rem;
-        --chart-1: 12 76% 61%;
-        --chart-2: 173 58% 39%;
-        --chart-3: 197 37% 24%;
-        --chart-4: 43 74% 66%;
-        --chart-5: 27 87% 67%;
+
+        --border: 220 20% 88%;
+        --input: 220 20% 88%;
+        --ring: 222 52% 18%;
+
+        /* Rounded corners — more approachable than sharp 0rem */
+        --radius: 0.5rem;
+
+        --chart-1: 174 68% 32%;
+        --chart-2: 222 52% 18%;
+        --chart-3: 38 92% 40%;
+        --chart-4: 158 60% 38%;
+        --chart-5: 0 65% 48%;
     }
 }
 
@@ -65,6 +80,64 @@ code {
         @apply bg-background text-foreground;
     }
 }
+
+/* ── Global interactive polish ──────────────────────────────────────────────── */
+
+/* Smooth transitions on all buttons and links */
+a, button {
+    transition: color 0.15s ease, background-color 0.15s ease,
+                border-color 0.15s ease, box-shadow 0.15s ease,
+                opacity 0.15s ease;
+}
+
+/* Consistent focus ring using the primary navy */
+:focus-visible {
+    outline: 2px solid hsl(222 52% 18%);
+    outline-offset: 2px;
+}
+
+/* Teal focus for inputs */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+    outline: 2px solid hsl(174 68% 32%);
+    outline-offset: 0;
+    border-color: hsl(174 68% 32%) !important;
+}
+
+/* Skeleton loading shimmer */
+@keyframes shimmer {
+    0%   { background-position: -600px 0; }
+    100% { background-position: 600px 0; }
+}
+
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        hsl(220 14% 92%) 25%,
+        hsl(220 14% 96%) 50%,
+        hsl(220 14% 92%) 75%
+    );
+    background-size: 600px 100%;
+    animation: shimmer 1.4s infinite linear;
+    border-radius: var(--radius);
+}
+
+/* Card hover lift — apply .card-lift to any card */
+.card-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -4px rgba(34, 45, 80, 0.12);
+}
+
+/* Warm page background */
+html {
+    background-color: hsl(40 30% 97%);
+}
+
+/* ── Custom animations ──────────────────────────────────────────────────────── */
 
 /* Custom animations */
 @keyframes fade-in-up {

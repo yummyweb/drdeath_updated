@@ -1,3 +1,4 @@
+const logger = require('../utils/logger');
 const express = require('express');
 const router = express.Router();
 const path = require('path');
@@ -32,7 +33,7 @@ router.get('/cases', async (req, res) => {
     const cases = await Case.find().sort({ order: 1, created_at: -1 });
     res.json(cases);
   } catch (error) {
-    console.error('Get cases error:', error);
+    logger.error({ err: error }, 'Get cases error:');
     res.status(500).json({ detail: 'Failed to fetch cases' });
   }
 });
@@ -46,7 +47,7 @@ router.get('/cases/:caseId', async (req, res) => {
     }
     res.json(caseItem);
   } catch (error) {
-    console.error('Get case error:', error);
+    logger.error({ err: error }, 'Get case error:');
     res.status(500).json({ detail: 'Failed to fetch case' });
   }
 });
@@ -68,7 +69,7 @@ router.post('/cases', getCurrentUser, requireAdmin, async (req, res) => {
 
     res.json(caseItem);
   } catch (error) {
-    console.error('Create case error:', error);
+    logger.error({ err: error }, 'Create case error:');
     res.status(500).json({ detail: 'Failed to create case' });
   }
 });
@@ -96,7 +97,7 @@ router.put('/cases/:caseId', getCurrentUser, requireAdmin, async (req, res) => {
 
     res.json(caseItem);
   } catch (error) {
-    console.error('Update case error:', error);
+    logger.error({ err: error }, 'Update case error:');
     res.status(500).json({ detail: 'Failed to update case' });
   }
 });
@@ -130,7 +131,7 @@ router.post('/cases/:caseId/image', getCurrentUser, requireAdmin, upload.single(
 
     res.json({ message: 'Image uploaded successfully', image_url: imageUrl });
   } catch (error) {
-    console.error('Upload case image error:', error);
+    logger.error({ err: error }, 'Upload case image error:');
     res.status(500).json({ detail: 'Failed to upload image' });
   }
 });
@@ -167,7 +168,7 @@ router.post('/cases/:caseId/document', getCurrentUser, requireAdmin, uploadDocum
 
     res.json({ message: 'Document uploaded successfully', document: caseItem.documents[caseItem.documents.length - 1] });
   } catch (error) {
-    console.error('Upload case document error:', error);
+    logger.error({ err: error }, 'Upload case document error:');
     res.status(500).json({ detail: error.message || 'Failed to upload document' });
   }
 });
@@ -209,7 +210,7 @@ router.post('/cases/:caseId/link', getCurrentUser, requireAdmin, async (req, res
 
     res.json({ message: 'Link added successfully', link: caseItem.external_links[caseItem.external_links.length - 1] });
   } catch (error) {
-    console.error('Add case link error:', error);
+    logger.error({ err: error }, 'Add case link error:');
     res.status(500).json({ detail: 'Failed to add link' });
   }
 });
@@ -240,7 +241,7 @@ router.delete('/cases/:caseId/document/:documentUrl', getCurrentUser, requireAdm
 
     res.json({ message: 'Document deleted successfully' });
   } catch (error) {
-    console.error('Delete case document error:', error);
+    logger.error({ err: error }, 'Delete case document error:');
     res.status(500).json({ detail: 'Failed to delete document' });
   }
 });
@@ -263,7 +264,7 @@ router.delete('/cases/:caseId/link/:linkIndex', getCurrentUser, requireAdmin, as
 
     res.json({ message: 'Link deleted successfully' });
   } catch (error) {
-    console.error('Delete case link error:', error);
+    logger.error({ err: error }, 'Delete case link error:');
     res.status(500).json({ detail: 'Failed to delete link' });
   }
 });
@@ -277,7 +278,7 @@ router.delete('/cases/:caseId', getCurrentUser, requireAdmin, async (req, res) =
     }
     res.json({ message: 'Case deleted successfully' });
   } catch (error) {
-    console.error('Delete case error:', error);
+    logger.error({ err: error }, 'Delete case error:');
     res.status(500).json({ detail: 'Failed to delete case' });
   }
 });

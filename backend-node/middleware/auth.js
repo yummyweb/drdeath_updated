@@ -1,20 +1,23 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { JWT_SECRET } = require('../utils/auth');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'legal-guardian-secret-key-change-in-production';
+// Extracts token from httpOnly cookie first, then Authorization header (backward compat)
+function extractToken(req) {
+  if (req.cookies && req.cookies.token) return req.cookies.token;
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) return authHeader.substring(7);
+  return null;
+}
 
-// Get current user from token
 const getCurrentUser = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const token = extractToken(req);
+    if (!token) {
       return res.status(401).json({ detail: 'No token provided' });
     }
 
-    const token = authHeader.substring(7);
     const decoded = jwt.verify(token, JWT_SECRET);
-    
     const user = await User.findOne({ id: decoded.user_id });
     if (!user) {
       return res.status(401).json({ detail: 'User not found' });
@@ -33,29 +36,24 @@ const getCurrentUser = async (req, res, next) => {
   }
 };
 
-// Get optional user (for guest checkout)
 const getOptionalUser = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const token = extractToken(req);
+    if (!token) {
       req.user = null;
       return next();
     }
 
-    const token = authHeader.substring(7);
     const decoded = jwt.verify(token, JWT_SECRET);
-    
     const user = await User.findOne({ id: decoded.user_id });
     req.user = user ? user.toJSON() : null;
     next();
-  } catch (error) {
+  } catch {
     req.user = null;
     next();
   }
 };
 
-// Require admin role
 const requireAdmin = (req, res, next) => {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ detail: 'Admin access required' });
@@ -63,9 +61,4 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
-module.exports = {
-  getCurrentUser,
-  getOptionalUser,
-  requireAdmin
-};
-
+module.exports = { getCurrentUser, getOptionalUser, requireAdmin };

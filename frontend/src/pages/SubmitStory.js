@@ -15,7 +15,7 @@ import { getApiUrl } from '@/config/env';
 const API = getApiUrl();
 
 const SubmitStory = () => {
-  const { user, getAuthHeader, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -71,7 +71,7 @@ const SubmitStory = () => {
 
     try {
       // Create story
-      const response = await axios.post(`${API}/stories`, formData, getAuthHeader());
+      const response = await axios.post(`${API}/stories`, formData);
       const storyId = response.data.id;
 
       // Upload images if any
@@ -83,13 +83,7 @@ const SubmitStory = () => {
           await axios.post(
             `${API}/stories/${storyId}/images`,
             formData,
-            {
-              ...getAuthHeader(),
-              headers: {
-                ...getAuthHeader().headers,
-                'Content-Type': 'multipart/form-data'
-              }
-            }
+            { headers: { 'Content-Type': 'multipart/form-data' } }
           );
         }
         setUploadingImages(false);

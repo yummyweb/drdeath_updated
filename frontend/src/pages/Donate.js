@@ -6,6 +6,13 @@ import { Button } from '../components/ui/button';
 import { Heart, Download, Share2, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
+const BankRow = ({ label, value, mono = false }) => (
+  <div className="flex justify-between items-start gap-4 py-2 border-b border-slate-100 last:border-0">
+    <span className="text-slate-500 text-sm flex-shrink-0">{label}</span>
+    <span className={`text-primary text-sm text-right ${mono ? 'font-mono' : 'font-medium'}`}>{value}</span>
+  </div>
+);
+
 const Donate = () => {
   const { settings } = useSettings();
   const upiId = settings.upi_id;
@@ -173,32 +180,82 @@ const Donate = () => {
             </h2>
           </div>
 
-          <Card className="border-slate-200 max-w-xl mx-auto">
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                  <span className="text-slate-500 text-sm">Account Name</span>
-                  <span className="font-medium text-primary">{payeeName}</span>
+          <div className="space-y-6 max-w-xl mx-auto">
+            {/* Domestic */}
+            <Card className="border-slate-200">
+              <CardContent className="p-6">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4">
+                  Domestic Transfer (NEFT / RTGS / IMPS / UPI)
+                </p>
+                <div className="space-y-3">
+                  {(settings.bank_account_name || payeeName) && (
+                    <BankRow label="Account Name" value={settings.bank_account_name || payeeName} />
+                  )}
+                  {settings.bank_account_number && (
+                    <BankRow label="Account Number" value={settings.bank_account_number} mono />
+                  )}
+                  {settings.bank_name && (
+                    <BankRow label="Bank" value={settings.bank_name} />
+                  )}
+                  {settings.bank_ifsc && (
+                    <BankRow label="IFSC Code" value={settings.bank_ifsc} mono />
+                  )}
+                  {settings.bank_branch && (
+                    <BankRow label="Branch" value={settings.bank_branch} />
+                  )}
+                  {upiId && (
+                    <BankRow label="UPI ID" value={upiId} mono />
+                  )}
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                  <span className="text-slate-500 text-sm">UPI ID</span>
-                  <span className="font-mono text-primary">{upiId}</span>
-                </div>
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-slate-500 text-sm">Contact Email</span>
-                  <a 
-                    href={`mailto:${settings.contact_email}`}
-                    className="text-secondary hover:text-amber-700"
-                  >
-                    {settings.contact_email}
-                  </a>
-                </div>
+                <p className="text-xs text-slate-400 mt-5 text-center">
+                  For donations above ₹50,000, please contact us for proper documentation.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* International — only shown if SWIFT is set */}
+            {settings.bank_swift && (
+              <Card className="border-slate-200">
+                <CardContent className="p-6">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4">
+                    International Wire Transfer (SWIFT)
+                  </p>
+                  <div className="space-y-3">
+                    {(settings.bank_account_name || payeeName) && (
+                      <BankRow label="Beneficiary Name" value={settings.bank_account_name || payeeName} />
+                    )}
+                    {settings.bank_account_number && (
+                      <BankRow label="Account Number" value={settings.bank_account_number} mono />
+                    )}
+                    {settings.bank_name && (
+                      <BankRow label="Bank Name" value={settings.bank_name} />
+                    )}
+                    <BankRow label="SWIFT / BIC" value={settings.bank_swift} mono />
+                    {settings.bank_ifsc && (
+                      <BankRow label="IFSC Code" value={settings.bank_ifsc} mono />
+                    )}
+                    {settings.bank_beneficiary_address && (
+                      <BankRow label="Beneficiary Address" value={settings.bank_beneficiary_address} />
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400 mt-5 text-center">
+                    Please email us after initiating a wire transfer so we can confirm receipt.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Contact */}
+            {settings.contact_email && (
+              <div className="text-center text-sm text-slate-500">
+                Questions?{' '}
+                <a href={`mailto:${settings.contact_email}`}
+                  className="text-secondary hover:text-amber-700 font-medium">
+                  {settings.contact_email}
+                </a>
               </div>
-              <p className="text-xs text-slate-400 mt-6 text-center">
-                For donations above ₹50,000, please contact us for proper documentation.
-              </p>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </div>
       </section>
 

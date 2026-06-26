@@ -1,0 +1,1 @@
+const { logo_url, professional_image_url, ...settingsToSave } = settings;

@@ -29,6 +29,14 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin'],
     default: 'user'
   },
+  // Email verification
+  email_verified:  { type: Boolean, default: false },
+  otp:             { type: String,  default: null },
+  otp_expires:     { type: Date,    default: null },
+  // Password reset
+  reset_token:         { type: String, default: null },
+  reset_token_expires: { type: Date,   default: null },
+
   created_at: {
     type: String,
     default: () => new Date().toISOString()
@@ -42,6 +50,10 @@ const userSchema = new mongoose.Schema({
 userSchema.methods.toJSON = function() {
   const obj = this.toObject();
   delete obj.password;
+  delete obj.otp;
+  delete obj.otp_expires;
+  delete obj.reset_token;
+  delete obj.reset_token_expires;
   return obj;
 };
 

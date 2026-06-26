@@ -45,7 +45,7 @@ import { getApiUrl } from '@/config/env';
 const API = getApiUrl();
 
 const AdminSettings = () => {
-  const { user, isAdmin, getAuthHeader, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const { settings: currentSettings, refreshSettings } = useSettings();
   const navigate = useNavigate();
   
@@ -58,6 +58,13 @@ const AdminSettings = () => {
     address: '',
     upi_id: '',
     upi_payee_name: '',
+    bank_account_name: '',
+    bank_account_number: '',
+    bank_ifsc: '',
+    bank_name: '',
+    bank_branch: '',
+    bank_swift: '',
+    bank_beneficiary_address: '',
     hero_title: '',
     hero_subtitle: '',
     about_mission: '',
@@ -103,6 +110,8 @@ const AdminSettings = () => {
   // Team members management state
   const [teamMembers, setTeamMembers] = useState([]);
   const [teamMembersLoading, setTeamMembersLoading] = useState(false);
+  const [confirmCaseDelete, setConfirmCaseDelete] = useState(null);
+  const [confirmMemberDelete, setConfirmMemberDelete] = useState(null);
   const [teamMemberDialog, setTeamMemberDialog] = useState({ open: false, member: null });
   const [teamMemberForm, setTeamMemberForm] = useState({
     name: '',
@@ -139,6 +148,13 @@ const AdminSettings = () => {
         address: currentSettings.address || '',
         upi_id: currentSettings.upi_id || '',
         upi_payee_name: currentSettings.upi_payee_name || '',
+        bank_account_name: currentSettings.bank_account_name || '',
+        bank_account_number: currentSettings.bank_account_number || '',
+        bank_ifsc: currentSettings.bank_ifsc || '',
+        bank_name: currentSettings.bank_name || '',
+        bank_branch: currentSettings.bank_branch || '',
+        bank_swift: currentSettings.bank_swift || '',
+        bank_beneficiary_address: currentSettings.bank_beneficiary_address || '',
         hero_title: currentSettings.hero_title || '',
         hero_subtitle: currentSettings.hero_subtitle || '',
         about_mission: currentSettings.about_mission || '',
@@ -234,8 +250,7 @@ const AdminSettings = () => {
         const formData = new FormData();
         formData.append('file', logoFile);
         await axios.post(`${API}/admin/settings/logo`, formData, {
-          ...getAuthHeader(),
-          headers: { ...getAuthHeader().headers, 'Content-Type': 'multipart/form-data' }
+          headers: { 'Content-Type': 'multipart/form-data' }
         });
       }
 
@@ -244,17 +259,33 @@ const AdminSettings = () => {
         const formData = new FormData();
         formData.append('file', professionalImageFile);
         await axios.post(`${API}/admin/settings/professional-image`, formData, {
-          ...getAuthHeader(),
-          headers: { ...getAuthHeader().headers, 'Content-Type': 'multipart/form-data' }
+          headers: { 'Content-Type': 'multipart/form-data' }
         });
       }
 
       // Save other settings
-      await axios.put(`${API}/admin/settings`, {
-        ...settings,
-        stats_years_of_service: parseInt(settings.stats_years_of_service),
-        stats_cases_resolved: parseInt(settings.stats_cases_resolved)
-      }, getAuthHeader());
+      // Exclude logo/image base64 blobs — those are uploaded via their own endpoints
+      const { logo_url, professional_image_url, ...settingsToSave } = settings;
+
+      await axios.put(
+      
+        `${API}/admin/settings`,
+      
+        {
+      
+          ...settingsToSave,
+      
+          stats_years_of_service:
+      
+            parseInt(settings.stats_years_of_service) || 0,
+      
+          stats_cases_resolved:
+      
+            parseInt(settings.stats_cases_resolved) || 0
+      
+        },
+      
+      );
 
       await refreshSettings();
       toast.success('Settings saved successfully!');
@@ -288,7 +319,7 @@ const AdminSettings = () => {
         current_password: credentials.current_password,
         new_email: credentials.new_email || null,
         new_password: credentials.new_password || null
-      }, getAuthHeader());
+      });
 
       toast.success('Credentials updated! Please login again.');
       setCredentials({ current_password: '', new_email: '', new_password: '', confirm_password: '' });
@@ -349,7 +380,7 @@ const AdminSettings = () => {
           description: caseForm.description,
           youtube_url: caseForm.youtube_url,
           order: parseInt(caseForm.order) || 0
-        }, getAuthHeader());
+        });
         caseId = caseDialog.case.id;
         toast.success('Case updated successfully');
       } else {
@@ -359,7 +390,7 @@ const AdminSettings = () => {
           description: caseForm.description,
           youtube_url: caseForm.youtube_url,
           order: parseInt(caseForm.order) || 0
-        }, getAuthHeader());
+        });
         caseId = response.data.id;
         toast.success('Case created successfully');
       }
@@ -369,8 +400,7 @@ const AdminSettings = () => {
         const formData = new FormData();
         formData.append('file', caseImageFile);
         await axios.post(`${API}/cases/${caseId}/image`, formData, {
-          ...getAuthHeader(),
-          headers: { ...getAuthHeader().headers, 'Content-Type': 'multipart/form-data' }
+          headers: { 'Content-Type': 'multipart/form-data' }
         });
       }
 
@@ -384,17 +414,16 @@ const AdminSettings = () => {
     }
   };
 
-  const handleDeleteCase = async (caseId) => {
-    if (!window.confirm('Are you sure you want to delete this case?')) {
-      return;
-    }
+  const handleDeleteCase = (caseId) => setConfirmCaseDelete(caseId);
 
+  const confirmDeleteCase = async () => {
+    const caseId = confirmCaseDelete;
+    setConfirmCaseDelete(null);
     try {
-      await axios.delete(`${API}/cases/${caseId}`, getAuthHeader());
+      await axios.delete(`${API}/cases/${caseId}`);
       toast.success('Case deleted successfully');
       fetchCases();
     } catch (error) {
-      console.error('Error deleting case:', error);
       toast.error(error.response?.data?.detail || 'Failed to delete case');
     }
   };
@@ -452,7 +481,7 @@ const AdminSettings = () => {
           email: teamMemberForm.email,
           linkedin_url: teamMemberForm.linkedin_url,
           order: parseInt(teamMemberForm.order) || 0
-        }, getAuthHeader());
+        });
         memberId = teamMemberDialog.member.id;
         toast.success('Team member updated successfully');
       } else {
@@ -464,7 +493,7 @@ const AdminSettings = () => {
           email: teamMemberForm.email,
           linkedin_url: teamMemberForm.linkedin_url,
           order: parseInt(teamMemberForm.order) || 0
-        }, getAuthHeader());
+        });
         memberId = response.data.id;
         toast.success('Team member created successfully');
       }
@@ -474,8 +503,7 @@ const AdminSettings = () => {
         const formData = new FormData();
         formData.append('file', teamMemberImageFile);
         await axios.post(`${API}/team-members/${memberId}/image`, formData, {
-          ...getAuthHeader(),
-          headers: { ...getAuthHeader().headers, 'Content-Type': 'multipart/form-data' }
+          headers: { 'Content-Type': 'multipart/form-data' }
         });
       }
 
@@ -489,17 +517,16 @@ const AdminSettings = () => {
     }
   };
 
-  const handleDeleteTeamMember = async (memberId) => {
-    if (!window.confirm('Are you sure you want to delete this team member?')) {
-      return;
-    }
+  const handleDeleteTeamMember = (memberId) => setConfirmMemberDelete(memberId);
 
+  const confirmDeleteMember = async () => {
+    const memberId = confirmMemberDelete;
+    setConfirmMemberDelete(null);
     try {
-      await axios.delete(`${API}/team-members/${memberId}`, getAuthHeader());
+      await axios.delete(`${API}/team-members/${memberId}`);
       toast.success('Team member deleted successfully');
       fetchTeamMembers();
     } catch (error) {
-      console.error('Error deleting team member:', error);
       toast.error(error.response?.data?.detail || 'Failed to delete team member');
     }
   };
@@ -519,11 +546,39 @@ const AdminSettings = () => {
     return null; // Will redirect via useEffect
   }
 
+  const ConfirmDialog = ({ message, onConfirm, onCancel }) => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+      <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
+        <p className="text-sm text-slate-700 mb-5">{message}</p>
+        <div className="flex gap-3 justify-end">
+          <button onClick={onCancel} className="px-4 py-2 text-sm border border-slate-300 rounded-md text-slate-600 hover:bg-slate-50">Cancel</button>
+          <button onClick={onConfirm} className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700">Delete</button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-slate-50 py-8" data-testid="admin-settings-page">
+
+      {confirmCaseDelete && (
+        <ConfirmDialog
+          message="Delete this case? This cannot be undone."
+          onConfirm={confirmDeleteCase}
+          onCancel={() => setConfirmCaseDelete(null)}
+        />
+      )}
+      {confirmMemberDelete && (
+        <ConfirmDialog
+          message="Delete this team member? This cannot be undone."
+          onConfirm={confirmDeleteMember}
+          onCancel={() => setConfirmMemberDelete(null)}
+        />
+      )}
+
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link 
-          to="/admin" 
+        <Link
+          to="/admin"
           className="inline-flex items-center text-slate-600 hover:text-primary mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -803,15 +858,15 @@ const AdminSettings = () => {
                   </div>
                 </div>
 
-                {/* Payment/Donation Settings */}
+                {/* UPI / QR Code */}
                 <div className="pt-6 border-t border-slate-200">
-                  <Label className="text-lg font-semibold mb-4 block">Payment Settings (QR Code)</Label>
+                  <Label className="text-lg font-semibold mb-1 block">UPI / QR Code</Label>
                   <p className="text-sm text-slate-500 mb-4">
-                    Update your UPI details to change the QR code on the Donate page. The QR code is automatically generated from these fields.
+                    Used to generate the QR code on the Donate page.
                   </p>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="upi_id">UPI ID *</Label>
+                      <Label htmlFor="upi_id">UPI ID</Label>
                       <Input
                         id="upi_id"
                         name="upi_id"
@@ -823,7 +878,7 @@ const AdminSettings = () => {
                       <p className="text-xs text-slate-400">e.g., yourname@paytm, yourname@ybl, yourname@phonepe</p>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="upi_payee_name">Payee Name *</Label>
+                      <Label htmlFor="upi_payee_name">Payee Name</Label>
                       <Input
                         id="upi_payee_name"
                         name="upi_payee_name"
@@ -833,6 +888,70 @@ const AdminSettings = () => {
                         data-testid="upi-payee-input"
                       />
                       <p className="text-xs text-slate-400">Name shown on payment screen</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Domestic Bank Transfer */}
+                <div className="pt-6 border-t border-slate-200">
+                  <Label className="text-lg font-semibold mb-1 block">Domestic Bank Transfer (NEFT / RTGS / IMPS)</Label>
+                  <p className="text-sm text-slate-500 mb-4">
+                    Shown in the Bank Transfer Details section on the Donate page for Indian donors.
+                  </p>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="bank_account_name">Account Name</Label>
+                      <Input id="bank_account_name" name="bank_account_name"
+                        value={settings.bank_account_name} onChange={handleSettingsChange}
+                        placeholder="Enter account holder name" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="bank_account_number">Account Number</Label>
+                      <Input id="bank_account_number" name="bank_account_number"
+                        value={settings.bank_account_number} onChange={handleSettingsChange}
+                        placeholder="Enter account number" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="bank_name">Bank Name</Label>
+                      <Input id="bank_name" name="bank_name"
+                        value={settings.bank_name} onChange={handleSettingsChange}
+                        placeholder="Enter bank name" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="bank_ifsc">IFSC Code</Label>
+                      <Input id="bank_ifsc" name="bank_ifsc"
+                        value={settings.bank_ifsc} onChange={handleSettingsChange}
+                        placeholder="Enter IFSC code" />
+                    </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="bank_branch">Branch</Label>
+                      <Input id="bank_branch" name="bank_branch"
+                        value={settings.bank_branch} onChange={handleSettingsChange}
+                        placeholder="Enter branch name and city" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* International Bank Transfer */}
+                <div className="pt-6 border-t border-slate-200">
+                  <Label className="text-lg font-semibold mb-1 block">International Wire Transfer (SWIFT / IBAN)</Label>
+                  <p className="text-sm text-slate-500 mb-4">
+                    Shown to international donors for inward foreign remittances. Leave blank to hide this section.
+                  </p>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="bank_swift">SWIFT / BIC Code</Label>
+                      <Input id="bank_swift" name="bank_swift"
+                        value={settings.bank_swift} onChange={handleSettingsChange}
+                        placeholder="Enter SWIFT/BIC code" />
+                      <p className="text-xs text-slate-400">8 or 11-character SWIFT code</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="bank_beneficiary_address">Beneficiary Address</Label>
+                      <Input id="bank_beneficiary_address" name="bank_beneficiary_address"
+                        value={settings.bank_beneficiary_address} onChange={handleSettingsChange}
+                        placeholder="Enter full beneficiary address" />
+                      <p className="text-xs text-slate-400">Full address required by international banks</p>
                     </div>
                   </div>
                 </div>

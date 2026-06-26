@@ -10,7 +10,8 @@ const storySchema = new mongoose.Schema({
   },
   user_id: {
     type: String,
-    required: true
+    required: true,
+    index: true
   },
   user_name: {
     type: String,
@@ -18,7 +19,9 @@ const storySchema = new mongoose.Schema({
   },
   title: {
     type: String,
-    required: true
+    required: true,
+    trim: true,
+    maxlength: 300
   },
   incident_date: {
     type: String,
@@ -26,15 +29,18 @@ const storySchema = new mongoose.Schema({
   },
   hospital_name: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   location: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   description: {
     type: String,
-    required: true
+    required: true,
+    maxlength: 50000
   },
   outcome: String,
   images: {
@@ -54,28 +60,25 @@ const storySchema = new mongoose.Schema({
     type: [{
       title: String,
       url: String,
-      type: String  // 'linkedin', 'petition', 'judgment', 'other'
+      type: String
     }],
     default: []
   },
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],
-    default: 'pending'
+    default: 'pending',
+    index: true
   },
-  admin_notes: String,
-  created_at: {
-    type: String,
-    default: () => new Date().toISOString()
-  },
-  updated_at: {
-    type: String,
-    default: () => new Date().toISOString()
-  }
+  admin_notes: String
 }, {
   collection: 'stories',
-  versionKey: false
+  versionKey: false,
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
-module.exports = mongoose.model('Story', storySchema);
+// Compound index for admin list queries
+storySchema.index({ status: 1, created_at: -1 });
+storySchema.index({ user_id: 1, created_at: -1 });
 
+module.exports = mongoose.model('Story', storySchema);

@@ -15,7 +15,7 @@ const API = getApiUrl();
 
 const EditStory = () => {
   const { id } = useParams();
-  const { user, isAdmin, getAuthHeader, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -30,7 +30,7 @@ const EditStory = () => {
 
   const fetchStory = useCallback(async () => {
     try {
-      const response = await axios.get(`${API}/stories/${id}`, getAuthHeader());
+      const response = await axios.get(`${API}/stories/${id}`);
       const story = response.data;
       
       // Allow edit if user owns the story OR if user is admin
@@ -55,7 +55,7 @@ const EditStory = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, getAuthHeader, user, isAdmin, navigate]);
+  }, [id, user, isAdmin, navigate]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -80,7 +80,7 @@ const EditStory = () => {
     try {
       // Use admin route if admin, otherwise use regular route
       const endpoint = isAdmin ? `${API}/admin/stories/${id}` : `${API}/stories/${id}`;
-      await axios.put(endpoint, formData, getAuthHeader());
+      await axios.put(endpoint, formData);
       
       if (isAdmin) {
         toast.success('Story updated successfully!');

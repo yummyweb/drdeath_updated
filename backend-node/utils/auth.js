@@ -1,33 +1,43 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'legal-guardian-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
+
 const JWT_EXPIRATION_HOURS = 24;
 
-// Hash password
-const hashPassword = async (password) => {
-  return await bcrypt.hash(password, 10);
+const IS_PROD = process.env.NODE_ENV === 'production';
+
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: IS_PROD,
+  sameSite: IS_PROD ? 'strict' : 'lax',
+  maxAge: JWT_EXPIRATION_HOURS * 60 * 60 * 1000,
+  path: '/'
 };
 
-// Verify password
-const verifyPassword = async (password, hashed) => {
-  return await bcrypt.compare(password, hashed);
-};
+const hashPassword = async (password) => bcrypt.hash(password, 12);
 
-// Create JWT token
+const verifyPassword = async (password, hashed) => bcrypt.compare(password, hashed);
+
 const createToken = (userId, email, role) => {
-  const payload = {
-    user_id: userId,
-    email,
-    role,
-    exp: Math.floor(Date.now() / 1000) + (JWT_EXPIRATION_HOURS * 3600)
-  };
-  return jwt.sign(payload, JWT_SECRET);
+  return jwt.sign(
+    {
+      user_id: userId,
+      email,
+      role,
+      exp: Math.floor(Date.now() / 1000) + JWT_EXPIRATION_HOURS * 3600
+    },
+    JWT_SECRET
+  );
 };
 
 module.exports = {
   hashPassword,
   verifyPassword,
-  createToken
+  createToken,
+  COOKIE_OPTIONS,
+  JWT_SECRET
 };
-

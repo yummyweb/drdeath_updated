@@ -1,3 +1,4 @@
+const logger = require('../utils/logger');
 const express = require('express');
 const router = express.Router();
 const Story = require('../models/Story');
@@ -24,7 +25,7 @@ router.get('/stats/public', async (req, res) => {
       cases_resolved: cases
     });
   } catch (error) {
-    console.error('Get public stats error:', error);
+    logger.error({ err: error }, 'Get public stats error:');
     res.status(500).json({ detail: 'Failed to fetch stats' });
   }
 });
@@ -61,7 +62,7 @@ router.get('/settings', async (req, res) => {
     }
     res.json(settings);
   } catch (error) {
-    console.error('Get settings error:', error);
+    logger.error({ err: error }, 'Get settings error:');
     res.status(500).json({ detail: 'Failed to fetch settings' });
   }
 });

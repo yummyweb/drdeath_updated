@@ -1,26 +1,26 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Textarea } from '../components/ui/textarea';
-import { Label } from '../components/ui/label';
-import { Checkbox } from '../components/ui/checkbox';
-import { Scale, Eye, EyeOff, AlertCircle, Briefcase } from 'lucide-react';
+import { Scale, Briefcase } from 'lucide-react';
 import { toast } from 'sonner';
 import { getApiUrl } from '@/config/env';
 
 const API = getApiUrl();
 
 const SPECIALIZATIONS = [
-  'Medical Negligence',
-  'Consumer Protection',
-  'Healthcare Law',
-  'Civil Litigation',
-  'Criminal Law',
-  'Insurance Claims',
-  'Human Rights'
+  'Medical Negligence', 'Consumer Protection', 'Healthcare Law',
+  'Civil Litigation', 'Criminal Law', 'Insurance Claims',
+  'Human Rights', 'Constitutional Law', 'Family Law', 'Labour Law',
+  'Arbitration & Mediation', 'Supreme Court Practice', 'High Court Practice',
+  'Patient Rights', 'Pharmaceutical Liability',
+];
+
+const COURT_TYPES = [
+  'Supreme Court', 'High Court', 'District Court', 'Consumer Forum',
+  'National Consumer Disputes Redressal Commission (NCDRC)',
+  'State Consumer Disputes Redressal Commission (SCDRC)',
+  'District Consumer Disputes Redressal Commission (DCDRC)',
+  'Medical Council Proceedings', 'Medico-Legal Arbitration',
 ];
 
 const INDIAN_STATES = [
@@ -29,300 +29,278 @@ const INDIAN_STATES = [
   'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram',
   'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
   'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
-  'Delhi', 'Chandigarh'
+  'Delhi', 'Chandigarh',
 ];
 
-const LANGUAGES = ['English', 'Hindi', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Marathi', 'Bengali', 'Gujarati', 'Punjabi'];
+const BAR_COUNCILS = [
+  'Bar Council of India', 'Bar Council of Andhra Pradesh & Telangana',
+  'Bar Council of Assam, Nagaland, Meghalaya, Manipur, Tripura, Mizoram & Arunachal Pradesh',
+  'Bar Council of Bihar', 'Bar Council of Chhattisgarh', 'Bar Council of Delhi',
+  'Bar Council of Gujarat', 'Bar Council of Himachal Pradesh', 'Bar Council of Jharkhand',
+  'Bar Council of Karnataka', 'Bar Council of Kerala', 'Bar Council of Madhya Pradesh',
+  'Bar Council of Maharashtra & Goa', 'Bar Council of Odisha', 'Bar Council of Punjab & Haryana',
+  'Bar Council of Rajasthan', 'Bar Council of Tamil Nadu & Puducherry',
+  'Bar Council of Uttar Pradesh', 'Bar Council of Uttarakhand', 'Bar Council of West Bengal',
+];
+
+const LANGUAGES = [
+  'English', 'Hindi', 'Bengali', 'Telugu', 'Marathi', 'Tamil', 'Urdu',
+  'Gujarati', 'Kannada', 'Malayalam', 'Odia', 'Punjabi', 'Assamese',
+];
+
+const EMPTY = {
+  full_name: '', email: '', phone: '',
+  bar_council_number: '', bar_council_state: '',
+  experience_years: '',
+  city: '', state: '',
+  about: '', biography: '',
+  linkedin: '', website: '',
+};
 
 const AdvocateRegister = () => {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    phone: '',
-    password: '',
-    bar_council_number: '',
-    experience_years: '',
-    about: '',
-    specializations: [],
-    areas_of_operation: [],
-    languages: ['English', 'Hindi']
-  });
+  const [form, setForm]           = useState(EMPTY);
+  const [specializations, setSpecs]   = useState([]);
+  const [court_types, setCourts]       = useState([]);
+  const [areas_of_operation, setAreas] = useState([]);
+  const [languages, setLanguages]      = useState(['English', 'Hindi']);
+  const [loading, setLoading]     = useState(false);
+  const [done, setDone]           = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const set = (field, val) => setForm(prev => ({ ...prev, [field]: val }));
 
-  const handleCheckboxChange = (field, value, checked) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: checked
-        ? [...prev[field], value]
-        : prev[field].filter(item => item !== value)
-    }));
-  };
+  const toggle = (arr, setArr, val) =>
+    setArr(prev => prev.includes(val) ? prev.filter(x => x !== val) : [...prev, val]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    
-    if (formData.specializations.length === 0) {
-      toast.error('Please select at least one specialization');
-      return;
-    }
-    
-    if (formData.areas_of_operation.length === 0) {
-      toast.error('Please select at least one area of operation');
-      return;
-    }
+    if (!specializations.length) { toast.error('Select at least one specialization'); return; }
+    if (!areas_of_operation.length) { toast.error('Select at least one area of operation'); return; }
+    if (!languages.length) { toast.error('Select at least one language'); return; }
 
     setLoading(true);
     try {
       await axios.post(`${API}/advocates/register`, {
-        ...formData,
-        experience_years: parseInt(formData.experience_years)
+        ...form,
+        experience_years: Number(form.experience_years),
+        specializations,
+        court_types,
+        areas_of_operation,
+        languages,
       });
-      toast.success('Registration submitted! Your profile will be reviewed by our team.');
-      navigate('/advocates');
-    } catch (error) {
-      console.error('Registration error:', error);
-      toast.error(error.response?.data?.detail || 'Registration failed');
+      setDone(true);
+    } catch (err) {
+      toast.error(err.response?.data?.error || err.response?.data?.detail || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4" data-testid="advocate-register-page">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <Scale className="h-10 w-10 text-primary" />
-            <span className="font-serif text-2xl font-bold text-primary">VOICE-Victims' Outreach & Initiative for Crime of Medical Negligence</span>
-          </Link>
-          <h1 className="font-serif text-3xl font-bold text-primary mb-2">Register as Pro Bono Advocate</h1>
-          <p className="text-slate-600">Join our network of advocates supporting victims of medical negligence</p>
-        </div>
-
-        {/* Notice */}
-        <div className="bg-accent/10 border border-accent p-4 mb-6 flex items-start gap-3">
-          <Briefcase className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-slate-700">
-            <p className="font-medium mb-1">Pro Bono Commitment</p>
-            <p>
-              By registering, you agree to provide initial consultations and basic guidance 
-              on a pro bono basis. Victims who need financial support can apply for grants 
-              from the foundation.
-            </p>
+  if (done) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-xl p-10 max-w-md w-full text-center shadow-sm border border-slate-200">
+          <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+            <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
           </div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Registration Submitted</h2>
+          <p className="text-slate-600 mb-6">
+            Thank you for registering with VOICE. Our team will review your profile and credentials before
+            publishing them in the advocate directory.
+          </p>
+          <button onClick={() => navigate('/advocates')} className="bg-slate-900 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-slate-700">
+            View Advocate Directory
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const textInput = (field, label, placeholder, required = false, type = 'text') => (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-1">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <input
+        type={type}
+        value={form[field]}
+        onChange={e => set(field, e.target.value)}
+        placeholder={placeholder}
+        required={required}
+        className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+      />
+    </div>
+  );
+
+  const CheckGroup = ({ items, selected, onToggle, cols = 2 }) => (
+    <div className={`grid grid-cols-${cols} gap-2`}>
+      {items.map(item => (
+        <label key={item} className="flex items-start gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={selected.includes(item)}
+            onChange={() => onToggle(item)}
+            className="mt-0.5 flex-shrink-0"
+          />
+          <span className="text-sm text-slate-700">{item}</span>
+        </label>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-slate-50 py-10 px-4" data-testid="advocate-register-page">
+      <div className="max-w-3xl mx-auto">
+
+        <div className="flex items-center gap-3 mb-2">
+          <Scale className="h-7 w-7 text-slate-700" />
+          <h1 className="text-3xl font-bold text-slate-900">Advocate Registration</h1>
+        </div>
+        <p className="text-slate-500 mb-2">
+          Register as a legal professional to support VOICE's mission of medical negligence awareness and victim advocacy.
+        </p>
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex gap-3 mb-8">
+          <Briefcase className="h-5 w-5 text-amber-700 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-900">
+            By registering, you agree to provide initial consultations on a <strong>pro bono basis</strong>.
+            Your profile will be reviewed before appearing in the public directory.
+          </p>
         </div>
 
-        <Card className="border-slate-200 shadow-lg">
-          <CardHeader className="border-b border-slate-100">
-            <CardTitle className="font-serif text-xl">Professional Details</CardTitle>
-          </CardHeader>
-          <CardContent className="p-8">
-            <form onSubmit={handleSubmit} className="space-y-6" data-testid="advocate-register-form">
-              {/* Personal Info */}
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="full_name">Full Name *</Label>
-                  <Input
-                    id="full_name"
-                    name="full_name"
-                    value={formData.full_name}
-                    onChange={handleChange}
-                    required
-                    placeholder="Adv. Full Name"
-                    className="bg-slate-50"
-                    data-testid="advocate-name-input"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address *</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    placeholder="advocate@email.com"
-                    className="bg-slate-50"
-                    data-testid="advocate-email-input"
-                  />
-                </div>
-              </div>
+        <form onSubmit={handleSubmit} className="space-y-8" data-testid="advocate-register-form">
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number *</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    required
-                    placeholder="+91 XXXXX XXXXX"
-                    className="bg-slate-50"
-                    data-testid="advocate-phone-input"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password *</Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      name="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={formData.password}
-                      onChange={handleChange}
-                      required
-                      placeholder="Min 6 characters"
-                      className="bg-slate-50 pr-10"
-                      data-testid="advocate-password-input"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Professional Info */}
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="bar_council_number">Bar Council Number *</Label>
-                  <Input
-                    id="bar_council_number"
-                    name="bar_council_number"
-                    value={formData.bar_council_number}
-                    onChange={handleChange}
-                    required
-                    placeholder="e.g., MH/1234/2020"
-                    className="bg-slate-50"
-                    data-testid="advocate-bar-input"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="experience_years">Years of Experience *</Label>
-                  <Input
-                    id="experience_years"
-                    name="experience_years"
-                    type="number"
-                    min="0"
-                    value={formData.experience_years}
-                    onChange={handleChange}
-                    required
-                    placeholder="e.g., 5"
-                    className="bg-slate-50"
-                    data-testid="advocate-experience-input"
-                  />
-                </div>
-              </div>
-
-              {/* Specializations */}
-              <div className="space-y-3">
-                <Label>Specializations * (Select all that apply)</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {SPECIALIZATIONS.map(spec => (
-                    <div key={spec} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`spec-${spec}`}
-                        checked={formData.specializations.includes(spec)}
-                        onCheckedChange={(checked) => handleCheckboxChange('specializations', spec, checked)}
-                        data-testid={`spec-${spec.toLowerCase().replace(' ', '-')}`}
-                      />
-                      <label htmlFor={`spec-${spec}`} className="text-sm text-slate-700 cursor-pointer">
-                        {spec}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Areas of Operation */}
-              <div className="space-y-3">
-                <Label>Areas of Operation * (Select all that apply)</Label>
-                <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 border border-slate-200 bg-slate-50">
-                  {INDIAN_STATES.map(state => (
-                    <div key={state} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`area-${state}`}
-                        checked={formData.areas_of_operation.includes(state)}
-                        onCheckedChange={(checked) => handleCheckboxChange('areas_of_operation', state, checked)}
-                      />
-                      <label htmlFor={`area-${state}`} className="text-sm text-slate-700 cursor-pointer">
-                        {state}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Languages */}
-              <div className="space-y-3">
-                <Label>Languages Known</Label>
-                <div className="grid grid-cols-5 gap-2">
-                  {LANGUAGES.map(lang => (
-                    <div key={lang} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`lang-${lang}`}
-                        checked={formData.languages.includes(lang)}
-                        onCheckedChange={(checked) => handleCheckboxChange('languages', lang, checked)}
-                      />
-                      <label htmlFor={`lang-${lang}`} className="text-sm text-slate-700 cursor-pointer">
-                        {lang}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* About */}
-              <div className="space-y-2">
-                <Label htmlFor="about">About You *</Label>
-                <Textarea
-                  id="about"
-                  name="about"
-                  value={formData.about}
-                  onChange={handleChange}
-                  required
-                  rows={4}
-                  placeholder="Describe your experience in handling medical negligence cases, notable achievements, and why you want to help victims..."
-                  className="bg-slate-50 resize-none"
-                  data-testid="advocate-about-input"
-                />
-              </div>
-
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-primary hover:bg-slate-800 uppercase tracking-widest font-bold"
-                data-testid="advocate-submit-btn"
-              >
-                {loading ? 'Submitting...' : 'Submit Registration'}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-slate-600">
-                Already registered?{' '}
-                <Link to="/advocates" className="text-secondary hover:text-amber-700 font-medium">
-                  View Advocate Directory
-                </Link>
-              </p>
+          {/* Personal */}
+          <section className="bg-white rounded-xl p-6 border border-slate-200 space-y-4">
+            <h2 className="font-semibold text-slate-800 text-lg border-b border-slate-100 pb-2">Personal Information</h2>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {textInput('full_name', 'Full Name', 'Adv. Firstname Lastname', true)}
+              {textInput('email', 'Email Address', 'advocate@email.com', true, 'email')}
+              {textInput('phone', 'Phone Number', '+91 98765 43210', true, 'tel')}
             </div>
-          </CardContent>
-        </Card>
+          </section>
+
+          {/* Bar credentials */}
+          <section className="bg-white rounded-xl p-6 border border-slate-200 space-y-4">
+            <h2 className="font-semibold text-slate-800 text-lg border-b border-slate-100 pb-2">Bar Council Credentials</h2>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {textInput('bar_council_number', 'Bar Council Enrolment Number', 'e.g. MH/1234/2010', true)}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">State Bar Council</label>
+                <select
+                  value={form.bar_council_state}
+                  onChange={e => set('bar_council_state', e.target.value)}
+                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                >
+                  <option value="">Select Bar Council</option>
+                  {BAR_COUNCILS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              {textInput('experience_years', 'Years of Experience', 'e.g. 8', true, 'number')}
+            </div>
+          </section>
+
+          {/* Specializations */}
+          <section className="bg-white rounded-xl p-6 border border-slate-200 space-y-4">
+            <h2 className="font-semibold text-slate-800 text-lg border-b border-slate-100 pb-2">
+              Specializations <span className="text-red-500">*</span>
+            </h2>
+            <CheckGroup items={SPECIALIZATIONS} selected={specializations} onToggle={v => toggle(specializations, setSpecs, v)} />
+          </section>
+
+          {/* Courts */}
+          <section className="bg-white rounded-xl p-6 border border-slate-200 space-y-4">
+            <h2 className="font-semibold text-slate-800 text-lg border-b border-slate-100 pb-2">Courts / Forums Practised In</h2>
+            <CheckGroup items={COURT_TYPES} selected={court_types} onToggle={v => toggle(court_types, setCourts, v)} cols={1} />
+          </section>
+
+          {/* Areas of operation */}
+          <section className="bg-white rounded-xl p-6 border border-slate-200 space-y-4">
+            <h2 className="font-semibold text-slate-800 text-lg border-b border-slate-100 pb-2">
+              Areas of Operation <span className="text-red-500">*</span>
+            </h2>
+            <div className="grid grid-cols-3 gap-2 max-h-52 overflow-y-auto p-1">
+              {INDIAN_STATES.map(s => (
+                <label key={s} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={areas_of_operation.includes(s)}
+                    onChange={() => toggle(areas_of_operation, setAreas, s)}
+                    className="flex-shrink-0"
+                  />
+                  <span className="text-sm text-slate-700">{s}</span>
+                </label>
+              ))}
+            </div>
+          </section>
+
+          {/* Location & profile */}
+          <section className="bg-white rounded-xl p-6 border border-slate-200 space-y-4">
+            <h2 className="font-semibold text-slate-800 text-lg border-b border-slate-100 pb-2">Practice Location & Profile</h2>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {textInput('city', 'Primary City', 'City')}
+              {textInput('state', 'State', 'State')}
+              {textInput('linkedin', 'LinkedIn Profile URL', 'https://linkedin.com/in/...', false, 'url')}
+              {textInput('website', 'Website / Legal Profile URL', 'https://', false, 'url')}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                About You <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={form.about}
+                onChange={e => set('about', e.target.value)}
+                required
+                rows={4}
+                placeholder="Describe your experience in medical negligence cases, notable achievements, and why you want to help victims…"
+                className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                data-testid="advocate-about-input"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Extended Biography (optional)</label>
+              <textarea
+                value={form.biography}
+                onChange={e => set('biography', e.target.value)}
+                rows={3}
+                placeholder="Additional background for the public directory…"
+                className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Languages</label>
+              <div className="flex flex-wrap gap-2">
+                {LANGUAGES.map(lang => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => toggle(languages, setLanguages, lang)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                      languages.includes(lang)
+                        ? 'bg-slate-900 text-white border-slate-900'
+                        : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-slate-900 text-white py-3 rounded-md font-medium hover:bg-slate-700 disabled:opacity-50 transition-colors"
+            data-testid="advocate-submit-btn"
+          >
+            {loading ? 'Submitting…' : 'Submit Registration'}
+          </button>
+        </form>
       </div>
     </div>
   );

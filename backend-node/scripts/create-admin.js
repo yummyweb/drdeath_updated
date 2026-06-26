@@ -12,7 +12,6 @@
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const { v4: uuidv4 } = require('uuid');
 
 const User = require('../models/User');
 
@@ -62,24 +61,15 @@ async function createAdmin() {
         console.log(`⚠️  Warning: User with email ${email} exists but is not an admin`);
         console.log('   Converting existing user to admin...\n');
         
-        const hashedPassword = await bcrypt.hash(password, 10);
-        existing.password = hashedPassword;
-        existing.role = 'admin';
-        existing.full_name = full_name;
-        if (phone) existing.phone = phone;
-        await existing.save();
-        
-        console.log('✅ Existing user converted to admin successfully!');
-        console.log(`   Email: ${email}`);
-        console.log(`   Name: ${full_name}`);
-        console.log(`   Role: admin\n`);
-        process.exit(0);
+        console.error('❌ Error: A non-admin user with this email already exists.');
+        console.log('   To promote them to admin, update their role directly in MongoDB.');
+        process.exit(1);
       }
     }
 
     // Create new admin user
     console.log('🔐 Creating admin user...');
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
     
     const admin = await User.create({
       email,
