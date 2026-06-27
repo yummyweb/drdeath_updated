@@ -33,27 +33,107 @@ import {
 const BOOK_URL = 'https://www.amazon.in/Dr-Death-Chhabra-Case-investigation-ebook/dp/B0DWKLG954/ref=sr_1_1?crid=13MQWS7NFL9DX&dib=eyJ2IjoiMSJ9.2vJmBzdZUezLnw7UmemFJA.U8Ym6bVGb_Fp6BpDCdaovUvFfDkC7BNtZLT_mB07m8o&dib_tag=se&keywords=dr+death+simran+chhabra&qid=1782444085&sprefix=%2Caps%2C203&sr=8-1';
 
 const AnnouncementBar = () => (
-  <div className="bg-amber-400 text-slate-900 text-xs sm:text-sm py-2.5 px-4 flex items-center justify-center gap-3">
-    <span className="flex-shrink-0 text-base">📖</span>
-    <span className="text-center leading-snug">
-      <span className="font-bold uppercase tracking-wide">New Book:</span>{' '}
-      <span className="font-semibold italic">Dr. Death – Simran Chhabra Murder Case</span>{' '}
-      <span className="hidden sm:inline font-medium text-slate-700">by Nishant Bharihoke</span>
+  <div style={{ background: 'linear-gradient(90deg, hsl(36 88% 40%) 0%, hsl(36 88% 46%) 100%)' }}
+    className="text-white text-xs py-2.5 px-4 flex items-center justify-center gap-3 shadow-sm">
+    <span className="hidden sm:flex items-center gap-1.5 text-amber-100/70 label-eyebrow" style={{ fontSize: '0.6rem' }}>
+      <span className="w-1 h-1 rounded-full bg-amber-200 inline-block animate-pulse" />
+      New Release
+    </span>
+    <span className="text-center leading-snug font-medium">
+      <span className="font-bold">Dr. Death – Simran Chhabra Murder Case</span>
+      <span className="hidden sm:inline text-amber-100/80"> · Nishant Bharihoke</span>
     </span>
     <a
       href={BOOK_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex-shrink-0 bg-slate-900 hover:bg-slate-700 text-white font-bold px-4 py-1.5 rounded text-xs transition-colors whitespace-nowrap shadow-sm"
+      className="flex-shrink-0 bg-slate-900 hover:bg-slate-700 text-white font-bold px-4 py-1.5 rounded-lg text-xs transition-all whitespace-nowrap shadow-md"
     >
-      Order on Amazon →
+      Order Now →
     </a>
   </div>
 );
 
+const YT_CHANNEL = 'https://www.youtube.com/@nishantbharihoke/';
+const YT_VIDEO   = 'https://www.youtube.com/watch?v=5Z1wpCOoVg0';
+const YT_THUMB   = 'https://img.youtube.com/vi/5Z1wpCOoVg0/mqdefault.jpg';
+
+// YouTube promo — mirrors BookPromo on the left side, homepage only
+const YouTubePromo = () => {
+  const [state, setState] = useState('pill'); // 'expanded' | 'pill'
+
+  if (state === 'pill') {
+    return (
+      <button
+        onClick={() => setState('expanded')}
+        className="fixed bottom-6 left-6 z-50 flex items-center gap-2 bg-red-700 text-white pl-2 pr-4 py-2 rounded-full shadow-2xl hover:bg-red-600 transition-all"
+        title="Watch on YouTube"
+      >
+        <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white flex-shrink-0" aria-hidden="true">
+          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+        </svg>
+        <span className="text-xs font-bold">Watch Now</span>
+      </button>
+    );
+  }
+
+  return (
+    <div className="fixed bottom-6 left-6 z-50 w-64 bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-white/10 animate-fade-in-up">
+      {/* Header */}
+      <div className="flex items-center justify-between bg-red-600 px-3 py-2">
+        <span className="text-xs font-bold text-white uppercase tracking-wide">▶ Watch on YouTube</span>
+        <button
+          onClick={() => setState('pill')}
+          className="text-white/80 hover:text-white transition-colors"
+          title="Minimise"
+          aria-label="Minimise"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      {/* Thumbnail */}
+      <a href={YT_VIDEO} target="_blank" rel="noopener noreferrer" className="block relative group">
+        <img src={YT_THUMB} alt="Watch: Dr. Death case" className="w-full object-cover" />
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/10 transition-colors">
+          <div className="bg-red-600 rounded-full p-2.5 shadow-lg">
+            <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </a>
+
+      {/* Text */}
+      <div className="px-3 pt-2 pb-1">
+        <p className="font-serif text-white font-bold text-sm leading-tight">The Doctor Who Got Away With Murder?</p>
+        <p className="text-slate-400 text-xs mt-1 leading-snug">Inside the Simran Chhabra case — the investigation they tried to bury.</p>
+      </div>
+
+      {/* CTAs */}
+      <div className="px-3 pb-3 pt-2 flex flex-col gap-2">
+        <a
+          href={YT_VIDEO}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full text-center bg-red-600 hover:bg-red-500 text-white font-bold py-2 rounded-lg text-sm transition-colors"
+        >
+          Watch the Video →
+        </a>
+        <a
+          href={YT_CHANNEL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full text-center bg-white/10 hover:bg-white/20 text-slate-300 font-semibold py-1.5 rounded-lg text-xs transition-colors"
+        >
+          Subscribe to Channel
+        </a>
+      </div>
+    </div>
+  );
+};
+
 // Floating book promo — expands on load, collapses to pill when minimised
 const BookPromo = () => {
-  const [state, setState] = useState('expanded'); // 'expanded' | 'pill'
+  const [state, setState] = useState('pill'); // 'expanded' | 'pill'
 
   if (state === 'pill') {
     return (
@@ -163,7 +243,7 @@ const Layout = ({ children }) => {
       <Favicon />
       <AnnouncementBar />
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200" data-testid="main-navigation">
+      <nav className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-[0_1px_4px_rgba(0,0,0,0.07)]" data-testid="main-navigation">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-auto min-h-[64px] gap-4">
             {/* Logo - Left aligned, full text visible, wraps to multiple lines */}
@@ -402,9 +482,10 @@ const Layout = ({ children }) => {
       </main>
 
       <BookPromo />
+      {location.pathname === '/' && <YouTubePromo />}
 
       {/* Footer */}
-      <footer className="bg-primary text-primary-foreground" data-testid="footer">
+      <footer className="text-primary-foreground" style={{ background: 'linear-gradient(160deg, hsl(220 55% 12%) 0%, hsl(220 55% 16%) 100%)' }} data-testid="footer">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {/* About */}
@@ -469,7 +550,22 @@ const Layout = ({ children }) => {
             </div>
           </div>
 
-          <div className="border-t border-slate-700 mt-8 pt-8 text-center text-sm text-slate-400 space-y-2">
+          <div className="border-t border-white/8 mt-10 pt-8 text-center text-sm text-slate-500 space-y-3">
+            {/* Social links */}
+            <div className="flex justify-center gap-4">
+              <a
+                href="https://www.youtube.com/@nishantbharihoke/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-slate-400 hover:text-red-400 transition-colors font-medium"
+                aria-label="YouTube Channel"
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+                YouTube
+              </a>
+            </div>
             <p>© {new Date().getFullYear()} {settings.site_name && settings.site_name !== 'Your Organization' ? settings.site_name : "VOICE-Victims' Outreach & Initiative for Crime of Medical Negligence"}. All rights reserved.</p>
             <p>Powered by Elizian Labs</p>
           </div>
