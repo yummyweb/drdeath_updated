@@ -250,6 +250,8 @@ const AdminOpportunities = () => {
         tags:     formData.tags   ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
         vacancies: formData.vacancies ? Number(formData.vacancies) : undefined,
         lastDate:  formData.lastDate || undefined,
+        // keep status in sync with published checkbox
+        status: formData.published ? 'published' : (formData.status === 'published' ? 'draft' : formData.status),
       };
 
       if (editing) {
