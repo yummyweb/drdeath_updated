@@ -8,7 +8,7 @@ const APPLICATION_STATUSES = [
 
 const ApplicationSchema = new mongoose.Schema({
   opportunity: { type: mongoose.Schema.Types.ObjectId, ref: 'Opportunity', required: true },
-  applicant:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  applicant:   { type: String, required: true },
 
   // Snapshot of applicant-provided data at time of application
   coverLetter:  { type: String },

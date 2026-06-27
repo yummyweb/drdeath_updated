@@ -132,8 +132,136 @@ const sendAutoReply = async (contactData) => {
   }
 };
 
+// ── Application emails ────────────────────────────────────────────────────────
+
+const STATUS_LABELS = {
+  applied:      'Application Received',
+  under_review: 'Under Review',
+  shortlisted:  'Shortlisted',
+  interview:    'Interview Scheduled',
+  selected:     'Selected',
+  rejected:     'Not Selected',
+  withdrawn:    'Withdrawn',
+};
+
+const STATUS_COLOURS = {
+  applied:      '#0F172A',
+  under_review: '#B45309',
+  shortlisted:  '#0369a1',
+  interview:    '#7c3aed',
+  selected:     '#15803d',
+  rejected:     '#b91c1c',
+  withdrawn:    '#64748b',
+};
+
+// Email to admin when a new application arrives
+const sendApplicationAlert = async (applicantName, applicantEmail, opportunityTitle, adminEmail) => {
+  const transporter = createTransporter();
+  if (!transporter) return false;
+  try {
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@voice.org',
+      to: adminEmail,
+      subject: `New Application: ${opportunityTitle}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #0F172A;">New Application Received</h2>
+          <div style="background:#f8f9fa; padding:20px; border-radius:8px; margin:20px 0;">
+            <p><strong>Applicant:</strong> ${applicantName}</p>
+            <p><strong>Email:</strong> <a href="mailto:${applicantEmail}">${applicantEmail}</a></p>
+            <p><strong>Position:</strong> ${opportunityTitle}</p>
+          </div>
+          <p>Log in to the <a href="${process.env.FRONTEND_URL || ''}/admin/opportunities">Admin Panel</a> to review the application.</p>
+          <p style="color:#64748b; font-size:12px; margin-top:30px; border-top:1px solid #e2e8f0; padding-top:16px;">
+            VOICE — automated notification
+          </p>
+        </div>
+      `,
+      replyTo: applicantEmail,
+    });
+    return true;
+  } catch (err) {
+    console.error('❌ sendApplicationAlert:', err.message);
+    return false;
+  }
+};
+
+// Confirmation email to applicant right after they apply
+const sendApplicationConfirmation = async (applicantName, applicantEmail, opportunityTitle) => {
+  const transporter = createTransporter();
+  if (!transporter) return false;
+  try {
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@voice.org',
+      to: applicantEmail,
+      subject: `Application Received — ${opportunityTitle}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #0F172A;">Your Application Has Been Received</h2>
+          <p>Dear ${applicantName},</p>
+          <p>Thank you for applying for <strong>${opportunityTitle}</strong> at VOICE.</p>
+          <div style="background:#f8f9fa; padding:20px; border-radius:8px; margin:20px 0;">
+            <h3 style="color:#0F172A; margin-top:0;">What happens next?</h3>
+            <ul style="color:#334155; line-height:1.8;">
+              <li>Our team will review your application</li>
+              <li>You will receive an email if your status changes</li>
+              <li>You can track your application status in your dashboard</li>
+            </ul>
+          </div>
+          <p style="color:#64748b; font-size:12px; margin-top:30px; border-top:1px solid #e2e8f0; padding-top:16px;">
+            VOICE — Victims' Outreach &amp; Initiative for Crime of Medical Negligence
+          </p>
+        </div>
+      `,
+    });
+    return true;
+  } catch (err) {
+    console.error('❌ sendApplicationConfirmation:', err.message);
+    return false;
+  }
+};
+
+// Status update email to applicant
+const sendApplicationStatusUpdate = async (applicantName, applicantEmail, opportunityTitle, status, note) => {
+  const transporter = createTransporter();
+  if (!transporter) return false;
+  const label  = STATUS_LABELS[status]  || status;
+  const colour = STATUS_COLOURS[status] || '#0F172A';
+  try {
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@voice.org',
+      to: applicantEmail,
+      subject: `Application Update — ${opportunityTitle}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #0F172A;">Application Status Update</h2>
+          <p>Dear ${applicantName},</p>
+          <p>Your application for <strong>${opportunityTitle}</strong> has been updated.</p>
+          <div style="background:#f8f9fa; padding:20px; border-radius:8px; margin:20px 0; border-left:4px solid ${colour};">
+            <p style="margin:0; font-size:18px; font-weight:bold; color:${colour};">${label}</p>
+            ${note ? `<p style="margin-top:12px; color:#334155;">${note}</p>` : ''}
+          </div>
+          <p>You can view your full application history in your
+            <a href="${process.env.FRONTEND_URL || ''}/dashboard">dashboard</a>.
+          </p>
+          <p style="color:#64748b; font-size:12px; margin-top:30px; border-top:1px solid #e2e8f0; padding-top:16px;">
+            VOICE — Victims' Outreach &amp; Initiative for Crime of Medical Negligence
+          </p>
+        </div>
+      `,
+    });
+    return true;
+  } catch (err) {
+    console.error('❌ sendApplicationStatusUpdate:', err.message);
+    return false;
+  }
+};
+
 module.exports = {
   sendContactNotification,
-  sendAutoReply
+  sendAutoReply,
+  sendApplicationAlert,
+  sendApplicationConfirmation,
+  sendApplicationStatusUpdate,
 };
 

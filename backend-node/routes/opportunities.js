@@ -5,9 +5,11 @@ const express  = require('express');
 const router   = express.Router();
 const Opportunity  = require('../models/Opportunity');
 const Application  = require('../models/Application');
+const User         = require('../models/User');
 const { APPLICATION_STATUSES } = require('../models/Application');
 const { CATEGORIES }           = require('../models/Opportunity');
 const { getCurrentUser, requireAdmin } = require('../middleware/auth');
+const { sendApplicationAlert, sendApplicationConfirmation, sendApplicationStatusUpdate } = require('../utils/email');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -80,6 +82,19 @@ router.post('/opportunities/:id/apply', getCurrentUser, async (req, res) => {
       portfolio:   portfolio?.trim(),
       statusHistory: [{ status: 'applied', note: 'Application submitted' }],
     });
+
+    // Emails — non-blocking
+    const applicantName  = req.user.full_name || req.user.email;
+    const applicantEmail = req.user.email;
+    const adminEmail     = process.env.ADMIN_EMAIL || process.env.SMTP_USER;
+
+    sendApplicationConfirmation(applicantName, applicantEmail, opp.title)
+      .catch(e => logger.error({ err: e }, 'Application confirmation email failed'));
+
+    if (adminEmail) {
+      sendApplicationAlert(applicantName, applicantEmail, opp.title, adminEmail)
+        .catch(e => logger.error({ err: e }, 'Application alert email failed'));
+    }
 
     res.status(201).json({ message: 'Application submitted successfully', id: application._id });
   } catch (err) {
@@ -286,6 +301,25 @@ router.put('/admin/applications/:id/status', getCurrentUser, requireAdmin, async
     if (req.body.adminNotes !== undefined) app.adminNotes = req.body.adminNotes;
     app.statusHistory.push({ status, note: note?.trim() || '' });
     await app.save();
+
+    // Notify applicant of status change — non-blocking
+    try {
+      const [applicant, opp] = await Promise.all([
+        User.findOne({ id: app.applicant }).select('full_name email').lean(),
+        Opportunity.findById(app.opportunity).select('title').lean(),
+      ]);
+      if (applicant?.email && opp?.title) {
+        sendApplicationStatusUpdate(
+          applicant.full_name || applicant.email,
+          applicant.email,
+          opp.title,
+          status,
+          note?.trim() || ''
+        ).catch(e => logger.error({ err: e }, 'Status update email failed'));
+      }
+    } catch (e) {
+      logger.error({ err: e }, 'Could not fetch applicant/opp for status email');
+    }
 
     res.json(app);
   } catch {
