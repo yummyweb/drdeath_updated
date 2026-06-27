@@ -11,9 +11,9 @@ const { getCurrentUser, requireAdmin } = require('../middleware/auth');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function paged(query, page, limit) {
+function paged(page, limit, defaultLimit = 20) {
   const p = Math.max(1, parseInt(page) || 1);
-  const l = Math.min(100, parseInt(limit) || 20);
+  const l = Math.min(100, parseInt(limit) || defaultLimit);
   return { skip: (p - 1) * l, limit: l, page: p };
 }
 

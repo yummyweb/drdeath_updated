@@ -109,8 +109,8 @@ const mongoUrl = process.env.MONGO_URL;
 const dbName = process.env.DB_NAME || 'legal_guardian';
 
 mongoose.connect(`${mongoUrl}/${dbName}`, {
-  serverSelectionTimeoutMS: 5000,
-  connectTimeoutMS: 10000,
+  serverSelectionTimeoutMS: 15000,
+  connectTimeoutMS: 20000,
   maxPoolSize: 20
 }).catch((err) => {
   logger.error('❌ MongoDB connection failed:', err.message);
