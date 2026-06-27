@@ -34,7 +34,7 @@ const OpportunitySchema = new mongoose.Schema({
   published: { type: Boolean, default: false },
   featured:  { type: Boolean, default: false },
 
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  createdBy: { type: String },
 }, { timestamps: true });
 
 OpportunitySchema.index({ status: 1, published: 1, createdAt: -1 });

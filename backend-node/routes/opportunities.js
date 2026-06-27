@@ -170,7 +170,11 @@ router.post('/admin/opportunities', getCurrentUser, requireAdmin, async (req, re
     if (!CATEGORIES.includes(category)) return res.status(400).json({ error: 'Invalid category' });
     if (!description?.trim()) return res.status(400).json({ error: 'description is required' });
 
-    const opp = await Opportunity.create({ ...req.body, createdBy: req.user.id });
+    const body = { ...req.body, createdBy: req.user.id };
+    // Strip empty strings for optional enum fields so Mongoose doesn't reject them
+    if (!body.employmentType) delete body.employmentType;
+    if (!body.remote) delete body.remote;
+    const opp = await Opportunity.create(body);
     res.status(201).json(opp);
   } catch (err) {
     res.status(500).json({ error: err.message || 'Failed to create opportunity' });
@@ -180,7 +184,10 @@ router.post('/admin/opportunities', getCurrentUser, requireAdmin, async (req, re
 // ── Admin: update ─────────────────────────────────────────────────────────────
 router.put('/admin/opportunities/:id', getCurrentUser, requireAdmin, async (req, res) => {
   try {
-    const opp = await Opportunity.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const body = { ...req.body };
+    if (!body.employmentType) delete body.employmentType;
+    if (!body.remote) delete body.remote;
+    const opp = await Opportunity.findByIdAndUpdate(req.params.id, body, { new: true, runValidators: true });
     if (!opp) return res.status(404).json({ error: 'Opportunity not found' });
     res.json(opp);
   } catch (err) {
