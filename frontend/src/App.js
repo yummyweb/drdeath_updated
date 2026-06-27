@@ -45,6 +45,7 @@ const Researchers         = lazy(() => import("./pages/Researchers"));
 const Events              = lazy(() => import("./pages/Events"));
 const EventDetail         = lazy(() => import("./pages/EventDetail"));
 const AdminEvents         = lazy(() => import("./pages/AdminEvents"));
+const AdminFAQs           = lazy(() => import("./pages/AdminFAQs"));
 
 // Admin-only — heaviest bundle; only loaded for admins
 const Admin               = lazy(() => import("./pages/Admin"));
@@ -117,6 +118,7 @@ function App() {
                 <Route path="/admin"          element={<RequireAdmin><Admin /></RequireAdmin>} />
                 <Route path="/admin/settings"      element={<RequireAdmin><AdminSettings /></RequireAdmin>} />
                 <Route path="/admin/opportunities" element={<RequireAdmin><AdminOpportunities /></RequireAdmin>} />
+                <Route path="/admin/faqs"          element={<RequireAdmin><AdminFAQs /></RequireAdmin>} />
 
                 {/* Public with layout */}
                 <Route path="/"              element={<Layout><Home /></Layout>} />

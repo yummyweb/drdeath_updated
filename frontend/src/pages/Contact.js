@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSettings } from '../context/SettingsContext';
 import { Card, CardContent } from '../components/ui/card';
@@ -16,6 +16,12 @@ const API = getApiUrl();
 
 const Contact = () => {
   const { settings } = useSettings();
+  const [faqs, setFaqs] = useState([]);
+
+  useEffect(() => {
+    axios.get(`${API}/faqs`).then(r => setFaqs(r.data)).catch(() => {});
+  }, []);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -379,31 +385,17 @@ const ContactContent = ({ settings, formData, setFormData, handleChange, handleS
           </div>
 
           <div className="space-y-4">
-            {[
-              {
-                q: 'What type of cases do you handle?',
-                a: 'We provide information and support for all types of medical negligence cases including misdiagnosis, surgical errors, medication errors, birth injuries, and more.'
-              },
-              {
-                q: 'Do you provide legal representation?',
-                a: 'We provide legal information and resources. For legal representation, we recommend consulting with qualified lawyers specializing in medical negligence cases.'
-              },
-              {
-                q: 'How long does it take to get a response?',
-                a: 'We aim to respond to all queries within 2-3 business days. For urgent matters, please mention it in the subject line.'
-              },
-              {
-                q: 'Is my information kept confidential?',
-                a: 'Yes, all information shared with us is kept strictly confidential and is only used to assist with your query.'
-              }
-            ].map((faq, index) => (
-              <Card key={index} className="border-slate-200" data-testid={`faq-${index}`}>
+            {faqs.map((faq) => (
+              <Card key={faq._id} className="border-slate-200" data-testid={`faq-${faq._id}`}>
                 <CardContent className="p-6">
-                  <h3 className="font-serif font-bold text-primary mb-2">{faq.q}</h3>
-                  <p className="text-sm text-slate-600">{faq.a}</p>
+                  <h3 className="font-serif font-bold text-primary mb-2">{faq.question}</h3>
+                  <p className="text-sm text-slate-600">{faq.answer}</p>
                 </CardContent>
               </Card>
             ))}
+            {faqs.length === 0 && (
+              <p className="text-center text-slate-400 text-sm py-6">No FAQs published yet.</p>
+            )}
           </div>
         </div>
       </section>

@@ -146,6 +146,7 @@ const doctorRoutes        = require('./routes/doctors');
 const journalistRoutes    = require('./routes/journalists');
 const researcherRoutes    = require('./routes/researchers');
 const eventRoutes         = require('./routes/events');
+const faqRoutes           = require('./routes/faqs');
 
 app.use('/api/auth', authLimiter);
 
@@ -168,6 +169,7 @@ app.use('/api', doctorRoutes);
 app.use('/api', journalistRoutes);
 app.use('/api', researcherRoutes);
 app.use('/api', eventRoutes);
+app.use('/api', faqRoutes);
 
 // ── Root ──────────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
