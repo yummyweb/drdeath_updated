@@ -70,10 +70,16 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   }, []);
 
-  // Stable no-op — cookies carry auth automatically via withCredentials.
-  // Kept for call-site compatibility; spreading `getAuthHeader()` into
-  // axios config is harmless and avoids touching every consumer.
   const getAuthHeader = useCallback(() => ({}), []);
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API}/auth/me`);
+      setUser(response.data);
+    } catch {
+      setUser(null);
+    }
+  }, []);
 
   return (
     <AuthContext.Provider value={{
@@ -82,6 +88,7 @@ export const AuthProvider = ({ children }) => {
       login,
       register,
       logout,
+      refreshUser,
       getAuthHeader,
       isAdmin: user?.role === 'admin',
       isAuthenticated: !!user

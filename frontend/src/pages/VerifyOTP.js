@@ -4,6 +4,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { ShieldCheck, RefreshCw } from 'lucide-react';
 import { getApiUrl } from '@/config/env';
+import { useAuth } from '@/context/AuthContext';
 
 const API = getApiUrl();
 
@@ -14,6 +15,7 @@ const VerifyOTP = () => {
   const [countdown, setCountdown] = useState(60);
   const inputRefs = useRef([]);
   const navigate  = useNavigate();
+  const { refreshUser } = useAuth();
 
   // Countdown timer for resend button
   useEffect(() => {
@@ -52,6 +54,7 @@ const VerifyOTP = () => {
     setLoading(true);
     try {
       await axios.post(`${API}/auth/verify-otp`, { otp });
+      await refreshUser();
       toast.success('Email verified! Welcome to VOICE.');
       navigate('/dashboard');
     } catch (err) {
