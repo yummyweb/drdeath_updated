@@ -17,7 +17,7 @@ const VerifyOTP = () => {
   const [countdown, setCountdown] = useState(60);
   const inputRefs = useRef([]);
   const navigate  = useNavigate();
-  const { refreshUser } = useAuth();
+  const { updateUser } = useAuth();
 
   // Countdown timer for resend button
   useEffect(() => {
@@ -60,7 +60,9 @@ const VerifyOTP = () => {
         sessionStorage.setItem(TOKEN_KEY, res.data.access_token);
         axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.access_token}`;
       }
-      await refreshUser();
+      if (res.data.user) {
+        updateUser(res.data.user);
+      }
       toast.success('Email verified! Welcome to VOICE.');
       navigate('/dashboard');
     } catch (err) {

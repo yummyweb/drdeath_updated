@@ -99,6 +99,10 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  const updateUser = useCallback((userData) => {
+    setUser(userData);
+  }, []);
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -107,6 +111,7 @@ export const AuthProvider = ({ children }) => {
       register,
       logout,
       refreshUser,
+      updateUser,
       getAuthHeader,
       isAdmin: user?.role === 'admin',
       isAuthenticated: !!user
