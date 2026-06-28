@@ -4,7 +4,7 @@ const logger     = require('./logger');
 
 const SITE_NAME = 'VOICE – Medical Negligence Platform';
 const FRONTEND  = process.env.FRONTEND_URL || 'http://localhost:3000';
-const FROM      = process.env.RESEND_FROM || 'VOICE <onboarding@resend.dev>';
+const FROM      = process.env.RESEND_FROM || 'VOICE <noreply@drdeath.in>';
 
 function getResend() {
   const key = process.env.RESEND_API_KEY;
