@@ -13,7 +13,7 @@ const IS_PROD = process.env.NODE_ENV === 'production';
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: IS_PROD,
-  sameSite: IS_PROD ? 'strict' : 'lax',
+  sameSite: IS_PROD ? 'none' : 'lax',
   maxAge: JWT_EXPIRATION_HOURS * 60 * 60 * 1000,
   path: '/'
 };
