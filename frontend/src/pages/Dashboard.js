@@ -37,7 +37,7 @@ import { getApiUrl } from '@/config/env';
 const API = getApiUrl();
 
 const Dashboard = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [stories, setStories] = useState([]);
   const [grants, setGrants] = useState([]);
@@ -65,9 +65,10 @@ const Dashboard = () => {
     }
 
     if (user) {
+      refreshUser(); // always get fresh email_verified status
       fetchData();
     }
-  }, [user, authLoading, navigate, fetchData]);
+  }, [authLoading, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDelete = async (storyId) => {
     try {
