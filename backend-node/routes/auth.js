@@ -104,7 +104,9 @@ router.post('/auth/verify-otp', getCurrentUser, async (req, res) => {
     user.otp_expires    = null;
     await user.save();
 
-    res.json({ message: 'Email verified successfully' });
+    const token = createToken(user.id, user.email, user.role);
+    res.cookie('token', token, COOKIE_OPTIONS);
+    res.json({ message: 'Email verified successfully', access_token: token, user: user.toJSON() });
   } catch (error) {
     logger.error({ err: error }, 'Verify OTP error');
     res.status(500).json({ detail: 'Verification failed' });

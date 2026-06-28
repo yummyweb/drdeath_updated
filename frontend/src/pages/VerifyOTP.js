@@ -6,6 +6,8 @@ import { ShieldCheck, RefreshCw } from 'lucide-react';
 import { getApiUrl } from '@/config/env';
 import { useAuth } from '@/context/AuthContext';
 
+const TOKEN_KEY = 'voice_token';
+
 const API = getApiUrl();
 
 const VerifyOTP = () => {
@@ -53,7 +55,11 @@ const VerifyOTP = () => {
 
     setLoading(true);
     try {
-      await axios.post(`${API}/auth/verify-otp`, { otp });
+      const res = await axios.post(`${API}/auth/verify-otp`, { otp });
+      if (res.data.access_token) {
+        sessionStorage.setItem(TOKEN_KEY, res.data.access_token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.access_token}`;
+      }
       await refreshUser();
       toast.success('Email verified! Welcome to VOICE.');
       navigate('/dashboard');

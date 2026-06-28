@@ -6,10 +6,23 @@ const AuthContext = createContext(null);
 
 const API = getApiUrl();
 
-// All requests include cookies — no Authorization header needed.
-// The backend sets httpOnly cookies on login; axios sends them automatically
-// when withCredentials is true.
 axios.defaults.withCredentials = true;
+
+const TOKEN_KEY = 'voice_token';
+
+function setAxiosToken(token) {
+  if (token) {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    sessionStorage.setItem(TOKEN_KEY, token);
+  } else {
+    delete axios.defaults.headers.common['Authorization'];
+    sessionStorage.removeItem(TOKEN_KEY);
+  }
+}
+
+// Restore token on page load
+const savedToken = sessionStorage.getItem(TOKEN_KEY);
+if (savedToken) setAxiosToken(savedToken);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser]       = useState(null);
@@ -22,6 +35,7 @@ export const AuthProvider = ({ children }) => {
         setUser(response.data);
       } catch {
         setUser(null);
+        setAxiosToken(null);
       } finally {
         setLoading(false);
       }
@@ -34,8 +48,9 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.post(`${API}/auth/login`, { email, password }, {
         timeout: 10000
       });
-      const { user: userData } = response.data;
+      const { user: userData, access_token } = response.data;
       if (!userData) throw new Error('Invalid response from server');
+      setAxiosToken(access_token);
       setUser(userData);
       return userData;
     } catch (error) {
@@ -56,7 +71,8 @@ export const AuthProvider = ({ children }) => {
     const response = await axios.post(`${API}/auth/register`, {
       email, password, full_name, phone
     });
-    const { user: userData } = response.data;
+    const { user: userData, access_token } = response.data;
+    setAxiosToken(access_token);
     setUser(userData);
     return userData;
   }, []);
@@ -67,6 +83,7 @@ export const AuthProvider = ({ children }) => {
     } catch {
       // Ignore logout errors — clear client state regardless
     }
+    setAxiosToken(null);
     setUser(null);
   }, []);
 
@@ -78,6 +95,7 @@ export const AuthProvider = ({ children }) => {
       setUser(response.data);
     } catch {
       setUser(null);
+      setAxiosToken(null);
     }
   }, []);
 
