@@ -1,40 +1,29 @@
 'use strict';
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const logger     = require('./logger');
 
-const SMTP_USER = process.env.SMTP_USER || '';
-const SMTP_PASS = process.env.SMTP_PASS || '';
 const SITE_NAME = 'VOICE – Medical Negligence Platform';
 const FRONTEND  = process.env.FRONTEND_URL || 'http://localhost:3000';
+const FROM      = 'VOICE <noreply@drdeath.in>';
 
-// Returns null if SMTP not configured — callers must handle gracefully
-function getTransporter() {
-  if (!SMTP_USER || !SMTP_PASS) return null;
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-  });
+function getResend() {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) { logger.warn('RESEND_API_KEY not set — email skipped'); return null; }
+  return new Resend(key);
 }
 
 async function send({ to, subject, html }) {
-  const transporter = getTransporter();
-  if (!transporter) {
-    logger.warn('SMTP not configured — email skipped');
-    return false;
-  }
+  const resend = getResend();
+  if (!resend) return false;
   try {
-    await transporter.sendMail({
-      from: `"${SITE_NAME}" <${SMTP_USER}>`,
-      to, subject, html,
-    });
+    const { error } = await resend.emails.send({ from: FROM, to, subject, html });
+    if (error) { logger.error({ err: error }, 'Resend error'); return false; }
     return true;
   } catch (err) {
     logger.error({ err }, 'Email send failed');
     return false;
   }
 }
-
-// ── Templates ──────────────────────────────────────────────────────────────────
 
 function wrap(body) {
   return `
@@ -49,7 +38,6 @@ function wrap(body) {
   </div>`;
 }
 
-// OTP verification
 async function sendOTP(to, name, otp) {
   return send({
     to,
@@ -67,7 +55,6 @@ async function sendOTP(to, name, otp) {
   });
 }
 
-// Password reset
 async function sendPasswordReset(to, name, token) {
   const link = `${FRONTEND}/reset-password/${token}`;
   return send({
@@ -87,7 +74,6 @@ async function sendPasswordReset(to, name, token) {
   });
 }
 
-// Legal aid status change
 async function sendGrantStatus(to, name, status, adminNotes, amountApproved) {
   const approved = status === 'approved';
   return send({
@@ -109,11 +95,11 @@ async function sendGrantStatus(to, name, status, adminNotes, amountApproved) {
   });
 }
 
-// Admin alert — new application received
 async function sendAdminNewApplication(type, applicantName, applicantEmail) {
-  if (!SMTP_USER) return false;
+  const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_USER;
+  if (!adminEmail) return false;
   return send({
-    to: SMTP_USER,
+    to: adminEmail,
     subject: `New ${type} application — ${applicantName}`,
     html: wrap(`
       <p style="color:#334155">A new <strong>${type}</strong> application has been submitted.</p>
