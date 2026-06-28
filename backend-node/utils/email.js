@@ -1,7 +1,7 @@
 'use strict';
 const { Resend } = require('resend');
 
-const FROM = 'VOICE <noreply@drdeath.in>';
+const FROM = process.env.RESEND_FROM || 'VOICE <onboarding@resend.dev>';
 const FRONTEND = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 function getResend() {
