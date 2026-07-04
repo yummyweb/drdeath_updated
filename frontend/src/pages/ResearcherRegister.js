@@ -50,6 +50,25 @@ const EMPTY = {
   open_to_collaborate: true,
 };
 
+const ChipGroup = ({ items, selected, onToggle }) => (
+  <div className="flex flex-wrap gap-2">
+    {items.map(item => (
+      <button
+        key={item}
+        type="button"
+        onClick={() => onToggle(item)}
+        className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+          selected.includes(item)
+            ? 'bg-slate-900 text-white border-slate-900'
+            : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+        }`}
+      >
+        {item}
+      </button>
+    ))}
+  </div>
+);
+
 const ResearcherRegister = () => {
   const navigate = useNavigate();
   const [form, setForm]                   = useState(EMPTY);
@@ -117,20 +136,6 @@ const ResearcherRegister = () => {
         required={required}
         className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
       />
-    </div>
-  );
-
-  const ChipGroup = ({ items, selected, onToggle }) => (
-    <div className="flex flex-wrap gap-2">
-      {items.map(item => (
-        <button key={item} type="button" onClick={() => onToggle(item)}
-          className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-            selected.includes(item)
-              ? 'bg-slate-900 text-white border-slate-900'
-              : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
-          }`}
-        >{item}</button>
-      ))}
     </div>
   );
 

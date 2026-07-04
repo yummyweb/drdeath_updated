@@ -52,6 +52,18 @@ const EMPTY = {
   consent_not_reviewer: false,
 };
 
+const inputClass = 'w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400';
+
+// Defined outside component so React does not re-create component types on every render
+const Field = ({ label, required, children }) => (
+  <div>
+    <label className="block text-sm font-medium text-slate-700 mb-1">
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
+    {children}
+  </div>
+);
+
 const DoctorRegister = () => {
   const navigate = useNavigate();
   const [form, setForm]       = useState(EMPTY);
@@ -114,26 +126,6 @@ const DoctorRegister = () => {
     );
   }
 
-  const Field = ({ label, required, children }) => (
-    <div>
-      <label className="block text-sm font-medium text-slate-700 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      {children}
-    </div>
-  );
-
-  const Input = ({ field, type = 'text', placeholder, ...rest }) => (
-    <input
-      type={type}
-      value={form[field]}
-      onChange={e => set(field, e.target.value)}
-      placeholder={placeholder}
-      className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
-      {...rest}
-    />
-  );
-
   return (
     <div className="min-h-screen bg-slate-50 py-10 px-4">
       <div className="max-w-3xl mx-auto">
@@ -152,13 +144,13 @@ const DoctorRegister = () => {
             <h2 className="font-semibold text-slate-800 text-lg border-b border-slate-100 pb-2">Personal Information</h2>
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="Full Name" required>
-                <Input field="full_name" placeholder="Dr. Firstname Lastname" required />
+                <input type="text" value={form.full_name} onChange={e => set('full_name', e.target.value)} placeholder="Dr. Firstname Lastname" required className={inputClass} />
               </Field>
               <Field label="Email Address" required>
-                <Input field="email" type="email" placeholder="doctor@example.com" required />
+                <input type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="doctor@example.com" required className={inputClass} />
               </Field>
               <Field label="Phone Number">
-                <Input field="phone" type="tel" placeholder="+91 98765 43210" />
+                <input type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="+91 98765 43210" className={inputClass} />
               </Field>
             </div>
           </section>
@@ -168,37 +160,28 @@ const DoctorRegister = () => {
             <h2 className="font-semibold text-slate-800 text-lg border-b border-slate-100 pb-2">Medical Credentials</h2>
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="Qualification" required>
-                <Input field="qualification" placeholder="e.g. MBBS, MS, MD, DNB" required />
+                <input type="text" value={form.qualification} onChange={e => set('qualification', e.target.value)} placeholder="e.g. MBBS, MS, MD, DNB" required className={inputClass} />
               </Field>
               <Field label="Medical Council Registration No." required>
-                <Input field="medical_council_reg" placeholder="Reg. number" required />
+                <input type="text" value={form.medical_council_reg} onChange={e => set('medical_council_reg', e.target.value)} placeholder="Reg. number" required className={inputClass} />
               </Field>
               <Field label="Medical Council / State Council">
-                <select
-                  value={form.medical_council_state}
-                  onChange={e => set('medical_council_state', e.target.value)}
-                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
-                >
+                <select value={form.medical_council_state} onChange={e => set('medical_council_state', e.target.value)} className={inputClass}>
                   <option value="">Select Council</option>
                   {INDIAN_COUNCILS.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </Field>
               <Field label="Years of Experience" required>
-                <Input field="experience_years" type="number" min="0" max="70" placeholder="e.g. 12" required />
+                <input type="number" value={form.experience_years} onChange={e => set('experience_years', e.target.value)} min="0" max="70" placeholder="e.g. 12" required className={inputClass} />
               </Field>
               <Field label="Specialization" required>
-                <select
-                  value={form.specialization}
-                  onChange={e => set('specialization', e.target.value)}
-                  required
-                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
-                >
+                <select value={form.specialization} onChange={e => set('specialization', e.target.value)} required className={inputClass}>
                   <option value="">Select specialization</option>
                   {SPECIALIZATIONS.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </Field>
               <Field label="Sub-specialization / Area of focus">
-                <Input field="sub_specialization" placeholder="e.g. Interventional Cardiology" />
+                <input type="text" value={form.sub_specialization} onChange={e => set('sub_specialization', e.target.value)} placeholder="e.g. Interventional Cardiology" className={inputClass} />
               </Field>
             </div>
           </section>
@@ -208,16 +191,16 @@ const DoctorRegister = () => {
             <h2 className="font-semibold text-slate-800 text-lg border-b border-slate-100 pb-2">Practice Details</h2>
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="Hospital / Institution">
-                <Input field="hospital" placeholder="e.g. AIIMS New Delhi" />
+                <input type="text" value={form.hospital} onChange={e => set('hospital', e.target.value)} placeholder="e.g. AIIMS New Delhi" className={inputClass} />
               </Field>
               <Field label="Clinic Name">
-                <Input field="clinic" placeholder="Private clinic name (if any)" />
+                <input type="text" value={form.clinic} onChange={e => set('clinic', e.target.value)} placeholder="Private clinic name (if any)" className={inputClass} />
               </Field>
               <Field label="City">
-                <Input field="city" placeholder="City" />
+                <input type="text" value={form.city} onChange={e => set('city', e.target.value)} placeholder="City" className={inputClass} />
               </Field>
               <Field label="State">
-                <Input field="state" placeholder="State" />
+                <input type="text" value={form.state} onChange={e => set('state', e.target.value)} placeholder="State" className={inputClass} />
               </Field>
             </div>
           </section>
@@ -226,7 +209,7 @@ const DoctorRegister = () => {
           <section className="bg-white rounded-xl p-6 border border-slate-200 space-y-4">
             <h2 className="font-semibold text-slate-800 text-lg border-b border-slate-100 pb-2">Research & Academic</h2>
             <Field label="Research Interests (comma-separated)">
-              <Input field="research_interests" placeholder="e.g. Patient Safety, Medical Ethics, Cardiothoracic outcomes" />
+              <input type="text" value={form.research_interests} onChange={e => set('research_interests', e.target.value)} placeholder="e.g. Patient Safety, Medical Ethics, Cardiothoracic outcomes" className={inputClass} />
             </Field>
             <Field label="Publications / Notable Work">
               <textarea
@@ -234,11 +217,11 @@ const DoctorRegister = () => {
                 onChange={e => set('publications', e.target.value)}
                 rows={3}
                 placeholder="List key publications, research papers, or achievements…"
-                className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                className={inputClass}
               />
             </Field>
             <Field label="ORCID iD">
-              <Input field="orcid" placeholder="e.g. 0000-0002-1825-0097" />
+              <input type="text" value={form.orcid} onChange={e => set('orcid', e.target.value)} placeholder="e.g. 0000-0002-1825-0097" className={inputClass} />
             </Field>
           </section>
 
@@ -251,7 +234,7 @@ const DoctorRegister = () => {
                 onChange={e => set('biography', e.target.value)}
                 rows={4}
                 placeholder="A brief professional biography for the public directory…"
-                className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                className={inputClass}
               />
             </Field>
 
@@ -277,10 +260,10 @@ const DoctorRegister = () => {
 
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="Website">
-                <Input field="website" type="url" placeholder="https://" />
+                <input type="url" value={form.website} onChange={e => set('website', e.target.value)} placeholder="https://" className={inputClass} />
               </Field>
               <Field label="LinkedIn Profile URL">
-                <Input field="linkedin" type="url" placeholder="https://linkedin.com/in/..." />
+                <input type="url" value={form.linkedin} onChange={e => set('linkedin', e.target.value)} placeholder="https://linkedin.com/in/..." className={inputClass} />
               </Field>
             </div>
 

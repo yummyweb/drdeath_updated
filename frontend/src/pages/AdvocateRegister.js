@@ -57,6 +57,22 @@ const EMPTY = {
   linkedin: '', website: '',
 };
 
+const CheckGroup = ({ items, selected, onToggle, cols = 2 }) => (
+  <div className={`grid grid-cols-${cols} gap-2`}>
+    {items.map(item => (
+      <label key={item} className="flex items-start gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={selected.includes(item)}
+          onChange={() => onToggle(item)}
+          className="mt-0.5 flex-shrink-0"
+        />
+        <span className="text-sm text-slate-700">{item}</span>
+      </label>
+    ))}
+  </div>
+);
+
 const AdvocateRegister = () => {
   const navigate = useNavigate();
   const [form, setForm]           = useState(EMPTY);
@@ -131,22 +147,6 @@ const AdvocateRegister = () => {
         required={required}
         className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
       />
-    </div>
-  );
-
-  const CheckGroup = ({ items, selected, onToggle, cols = 2 }) => (
-    <div className={`grid grid-cols-${cols} gap-2`}>
-      {items.map(item => (
-        <label key={item} className="flex items-start gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={selected.includes(item)}
-            onChange={() => onToggle(item)}
-            className="mt-0.5 flex-shrink-0"
-          />
-          <span className="text-sm text-slate-700">{item}</span>
-        </label>
-      ))}
     </div>
   );
 
