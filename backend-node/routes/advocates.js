@@ -68,24 +68,26 @@ router.post('/advocates/register', validate(schemas.advocate), async (req, res) 
 // ── Public: approved directory ────────────────────────────────────────────────
 router.get('/advocates', async (req, res) => {
   try {
-    const { location, specialization, search, page: p = 1, limit: l = 20 } = req.query;
+    const { location, city, specialization, search, page: p = 1, limit: l = 20 } = req.query;
     const page  = Math.max(1, parseInt(p));
     const limit = Math.min(50, parseInt(l));
 
     const query = { status: 'approved' };
-    if (location)       query.areas_of_operation = { $regex: location, $options: 'i' };
-    if (specialization) query.specializations     = { $regex: specialization, $options: 'i' };
+    if (location)       query.state            = { $regex: location, $options: 'i' };
+    if (city)           query.city             = { $regex: city, $options: 'i' };
+    if (specialization) query.specializations  = { $regex: specialization, $options: 'i' };
     if (search) {
       query.$or = [
         { full_name:          { $regex: search, $options: 'i' } },
         { about:              { $regex: search, $options: 'i' } },
         { areas_of_operation: { $regex: search, $options: 'i' } },
+        { city:               { $regex: search, $options: 'i' } },
       ];
     }
 
     const [data, total] = await Promise.all([
       Advocate.find(query)
-        .sort({ featured: -1, verified: -1, created_at: -1 })
+        .sort({ featured: -1, verified: -1, full_name: 1 })
         .skip((page - 1) * limit).limit(limit)
         .select('-password -admin_notes -bar_council_number')
         .lean(),
@@ -96,6 +98,31 @@ router.get('/advocates', async (req, res) => {
   } catch (err) {
     logger.error({ err: err }, 'Get advocates error:');
     res.status(500).json({ error: 'Failed to fetch advocates' });
+  }
+});
+
+// ── Self: update own profile (by email match) ─────────────────────────────────
+router.put('/advocates/me', getCurrentUser, async (req, res) => {
+  try {
+    const advocate = await Advocate.findOne({ email: req.user.email });
+    if (!advocate) return res.status(404).json({ error: 'Advocate profile not found for your account' });
+
+    const allowed = ['full_name','phone','specializations','court_types','experience_years',
+      'areas_of_operation','city','state','about','biography','linkedin','website','languages',
+      'bar_council_state'];
+    allowed.forEach(f => { if (req.body[f] !== undefined) advocate[f] = req.body[f]; });
+
+    // Allow updating bar_council_number only if not already taken by someone else
+    if (req.body.bar_council_number && req.body.bar_council_number !== advocate.bar_council_number) {
+      const taken = await Advocate.findOne({ bar_council_number: req.body.bar_council_number.trim(), _id: { $ne: advocate._id } });
+      if (taken) return res.status(409).json({ error: 'That Bar Council number is already registered to another advocate' });
+      advocate.bar_council_number = req.body.bar_council_number.trim();
+    }
+
+    await advocate.save();
+    res.json(advocate);
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to update profile' });
   }
 });
 

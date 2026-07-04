@@ -6,14 +6,40 @@ import { getApiUrl } from '@/config/env';
 
 const API = getApiUrl();
 
-const INDIAN_STATES = [
-  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
-  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
-  'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram',
-  'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
-  'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
-  'Delhi', 'Chandigarh',
-];
+const STATES_CITIES = {
+  'Andhra Pradesh': ['Visakhapatnam','Vijayawada','Guntur','Nellore','Kurnool','Tirupati','Rajahmundry'],
+  'Arunachal Pradesh': ['Itanagar','Naharlagun','Pasighat'],
+  'Assam': ['Guwahati','Dibrugarh','Silchar','Jorhat','Nagaon'],
+  'Bihar': ['Patna','Gaya','Bhagalpur','Muzaffarpur','Purnia'],
+  'Chhattisgarh': ['Raipur','Bilaspur','Durg','Bhilai','Korba'],
+  'Goa': ['Panaji','Margao','Vasco da Gama','Mapusa'],
+  'Gujarat': ['Ahmedabad','Surat','Vadodara','Rajkot','Bhavnagar','Jamnagar','Gandhinagar'],
+  'Haryana': ['Gurugram','Faridabad','Panipat','Ambala','Hisar','Rohtak','Karnal'],
+  'Himachal Pradesh': ['Shimla','Dharamshala','Solan','Mandi','Kullu'],
+  'Jharkhand': ['Ranchi','Jamshedpur','Dhanbad','Bokaro','Hazaribagh'],
+  'Karnataka': ['Bengaluru','Mysuru','Mangaluru','Hubballi','Belagavi','Kalaburagi'],
+  'Kerala': ['Thiruvananthapuram','Kochi','Kozhikode','Thrissur','Kollam','Kannur'],
+  'Madhya Pradesh': ['Bhopal','Indore','Jabalpur','Gwalior','Ujjain','Sagar'],
+  'Maharashtra': ['Mumbai','Pune','Nagpur','Thane','Nashik','Aurangabad','Solapur','Navi Mumbai'],
+  'Manipur': ['Imphal','Thoubal','Bishnupur'],
+  'Meghalaya': ['Shillong','Tura'],
+  'Mizoram': ['Aizawl','Lunglei'],
+  'Nagaland': ['Kohima','Dimapur'],
+  'Odisha': ['Bhubaneswar','Cuttack','Rourkela','Berhampur','Sambalpur'],
+  'Punjab': ['Ludhiana','Amritsar','Jalandhar','Patiala','Bathinda','Mohali'],
+  'Rajasthan': ['Jaipur','Jodhpur','Udaipur','Kota','Ajmer','Bikaner'],
+  'Sikkim': ['Gangtok','Namchi'],
+  'Tamil Nadu': ['Chennai','Coimbatore','Madurai','Tiruchirappalli','Salem','Tirunelveli'],
+  'Telangana': ['Hyderabad','Warangal','Nizamabad','Karimnagar','Khammam'],
+  'Tripura': ['Agartala','Dharmanagar'],
+  'Uttar Pradesh': ['Lucknow','Kanpur','Agra','Varanasi','Meerut','Allahabad','Ghaziabad','Noida'],
+  'Uttarakhand': ['Dehradun','Haridwar','Roorkee','Haldwani','Nainital'],
+  'West Bengal': ['Kolkata','Howrah','Asansol','Siliguri','Durgapur','Bardhaman'],
+  'Delhi': ['New Delhi','North Delhi','South Delhi','East Delhi','West Delhi','Dwarka','Rohini'],
+  'Chandigarh': ['Chandigarh'],
+};
+
+const INDIAN_STATES = Object.keys(STATES_CITIES).sort();
 
 function AdvocateCard({ a }) {
   return (
@@ -95,6 +121,9 @@ const Advocates = () => {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch]           = useState('');
   const [location, setLocation]       = useState('');
+  const [city, setCity]               = useState('');
+
+  const availableCities = location ? (STATES_CITIES[location] || []) : [];
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -102,15 +131,15 @@ const Advocates = () => {
       const params = { limit: 50 };
       if (search)   params.search   = search;
       if (location) params.location = location;
+      if (city)     params.city     = city;
       const res = await axios.get(`${API}/advocates`, { params });
-      // Handle both paginated { data } and legacy raw array
       setAdvocates(res.data.data ?? res.data);
     } catch {
       setAdvocates([]);
     } finally {
       setLoading(false);
     }
-  }, [search, location]);
+  }, [search, location, city]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -163,13 +192,25 @@ const Advocates = () => {
 
           <select
             value={location}
-            onChange={e => setLocation(e.target.value)}
+            onChange={e => { setLocation(e.target.value); setCity(''); }}
             className="border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
             data-testid="location-filter"
           >
-            <option value="">All Locations</option>
+            <option value="">All States</option>
             {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
+
+          {availableCities.length > 0 && (
+            <select
+              value={city}
+              onChange={e => setCity(e.target.value)}
+              className="border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+              data-testid="city-filter"
+            >
+              <option value="">All Cities</option>
+              {availableCities.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          )}
         </div>
       </section>
 
