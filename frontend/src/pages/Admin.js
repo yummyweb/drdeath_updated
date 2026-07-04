@@ -326,7 +326,7 @@ const Admin = () => {
             <TabsTrigger value="all" data-testid="tab-all" className="cursor-pointer">
               All Stories ({stories.length || 0})
             </TabsTrigger>
-            <TabsTrigger value="contacts" data-testid="tab-contacts" className="cursor-pointer">
+            <TabsTrigger value="pending-advocates" data-testid="tab-pending-advocates" className="cursor-pointer">
               Pending Advocates ({stats?.pending_advocates || 0})
             </TabsTrigger>
             <TabsTrigger 
@@ -583,7 +583,7 @@ Orders ({orders.length})
           ))}
 
           {/* Pending Advocates Tab */}
-          <TabsContent value="contacts">
+          <TabsContent value="pending-advocates">
             {!advocates || advocates.filter(a => a.status === 'pending').length === 0 ? (
               <Card className="border-slate-200">
                 <CardContent className="p-12 text-center">
