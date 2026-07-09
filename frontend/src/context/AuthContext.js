@@ -13,15 +13,15 @@ const TOKEN_KEY = 'voice_token';
 function setAxiosToken(token) {
   if (token) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    sessionStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(TOKEN_KEY, token);
   } else {
     delete axios.defaults.headers.common['Authorization'];
-    sessionStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(TOKEN_KEY);
   }
 }
 
-// Restore token on page load
-const savedToken = sessionStorage.getItem(TOKEN_KEY);
+// Restore token on page load — localStorage persists across tabs and sessions
+const savedToken = localStorage.getItem(TOKEN_KEY);
 if (savedToken) setAxiosToken(savedToken);
 
 export const AuthProvider = ({ children }) => {
