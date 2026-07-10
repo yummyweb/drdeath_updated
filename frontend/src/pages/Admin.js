@@ -27,7 +27,9 @@ import {
   Settings,
   Package,
   Plus,
-  Edit
+  Edit,
+  Trash2,
+  Upload
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -535,25 +537,75 @@ Orders ({orders.length})
                                     <p className="text-sm text-slate-600">{story.outcome}</p>
                                   </>
                                 )}
-                                {story.images && story.images.length > 0 && (
-                                  <div className="mt-4">
-                                    <h4 className="font-semibold text-primary mb-2">Images ({story.images.length}):</h4>
-                                    <div className="flex gap-2 flex-wrap">
+                                <div className="mt-4">
+                                  <h4 className="font-semibold text-primary mb-2">
+                                    Images ({(story.images || []).length})
+                                  </h4>
+                                  {story.images && story.images.length > 0 && (
+                                    <div className="flex gap-2 flex-wrap mb-2">
                                       {story.images.map((img, idx) => (
-                                        <img
-                                          key={idx}
-                                          src={getImageUrl(img)}
-                                          alt={`Story image ${idx + 1}`}
-                                          className="w-24 h-24 object-cover border border-slate-200"
-                                          onError={(e) => {
-                                            console.error('Image failed to load:', img);
-                                            e.target.style.display = 'none';
-                                          }}
-                                        />
+                                        <div key={idx} className="relative group">
+                                          <img
+                                            src={getImageUrl(img)}
+                                            alt={`Story image ${idx + 1}`}
+                                            className="w-24 h-24 object-cover border border-slate-200 rounded"
+                                            onError={(e) => { e.target.src = ''; e.target.alt = '(broken)'; }}
+                                          />
+                                          <button
+                                            className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded px-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            title="Remove image"
+                                            onClick={async () => {
+                                              try {
+                                                await axios.delete(`${API}/admin/stories/${story.id}/images/${idx}`);
+                                                setAdminData(prev => ({
+                                                  ...prev,
+                                                  stories: prev.stories.map(s =>
+                                                    s.id === story.id
+                                                      ? { ...s, images: s.images.filter((_, i) => i !== idx) }
+                                                      : s
+                                                  )
+                                                }));
+                                                toast.success('Image removed');
+                                              } catch { toast.error('Failed to remove image'); }
+                                            }}
+                                          >✕</button>
+                                        </div>
                                       ))}
                                     </div>
-                                  </div>
-                                )}
+                                  )}
+                                  <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-600 hover:text-primary mt-1">
+                                    <Upload className="h-4 w-4" />
+                                    Add / replace images
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      multiple
+                                      className="hidden"
+                                      onChange={async (e) => {
+                                        const files = Array.from(e.target.files);
+                                        for (const file of files) {
+                                          const fd = new FormData();
+                                          fd.append('file', file);
+                                          try {
+                                            const res = await axios.post(`${API}/admin/stories/${story.id}/images`, fd, {
+                                              headers: { 'Content-Type': 'multipart/form-data' }
+                                            });
+                                            setAdminData(prev => ({
+                                              ...prev,
+                                              stories: prev.stories.map(s =>
+                                                s.id === story.id
+                                                  ? { ...s, images: [...(s.images || []), res.data.image_url] }
+                                                  : s
+                                              )
+                                            }));
+                                            toast.success('Image uploaded');
+                                          } catch { toast.error(`Failed to upload ${file.name}`); }
+                                        }
+                                        e.target.value = '';
+                                      }}
+                                    />
+                                  </label>
+                                </div>
                                 {story.admin_notes && (
                                   <div className="mt-4 p-3 bg-amber-50 border-l-2 border-amber-500">
                                     <p className="text-sm font-medium text-amber-800">Admin Notes:</p>
@@ -589,9 +641,9 @@ Orders ({orders.length})
                               </>
                             )}
                             <Link to={`/edit-story/${story.id}`}>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
+                              <Button
+                                size="sm"
+                                variant="outline"
                                 className="border-slate-300"
                                 data-testid={`admin-edit-story-${story.id}`}
                               >
@@ -599,6 +651,24 @@ Orders ({orders.length})
                                 Edit
                               </Button>
                             </Link>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={async () => {
+                                if (!window.confirm(`Delete story "${story.title}"? This cannot be undone.`)) return;
+                                try {
+                                  await axios.delete(`${API}/admin/stories/${story.id}`);
+                                  setAdminData(prev => ({
+                                    ...prev,
+                                    stories: prev.stories.filter(s => s.id !== story.id)
+                                  }));
+                                  toast.success('Story deleted');
+                                } catch { toast.error('Failed to delete story'); }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Delete
+                            </Button>
                           </div>
                         </div>
                       </CardContent>

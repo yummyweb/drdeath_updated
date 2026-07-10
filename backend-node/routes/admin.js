@@ -493,5 +493,88 @@ router.get('/admin/stats', getCurrentUser, requireAdmin, async (req, res) => {
   }
 });
 
+// Delete story (admin) — also removes images from Cloudinary if hosted there
+router.delete('/admin/stories/:storyId', getCurrentUser, requireAdmin, async (req, res) => {
+  try {
+    const story = await Story.findOne({ id: req.params.storyId });
+    if (!story) return res.status(404).json({ detail: 'Story not found' });
+
+    // Delete images from Cloudinary if they are cloud URLs
+    if (story.images && story.images.length > 0) {
+      const { useCloudinary } = require('../utils/upload');
+      if (useCloudinary()) {
+        const cloudinary = require('cloudinary').v2;
+        for (const imgUrl of story.images) {
+          if (imgUrl.startsWith('http')) {
+            // Extract public_id from Cloudinary URL
+            const match = imgUrl.match(/\/voice\/.*?(?=\.\w+$)/);
+            if (match) {
+              try { await cloudinary.uploader.destroy(match[0].slice(1)); } catch { /* ignore */ }
+            }
+          }
+        }
+      }
+    }
+
+    await Story.deleteOne({ id: req.params.storyId });
+    res.json({ message: 'Story deleted successfully' });
+  } catch (error) {
+    logger.error({ err: error }, 'Admin delete story error:');
+    res.status(500).json({ detail: 'Failed to delete story' });
+  }
+});
+
+// Admin: upload image to an existing story (bypasses ownership check)
+router.post('/admin/stories/:storyId/images', getCurrentUser, requireAdmin, require('../utils/upload').upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ detail: 'No file provided' });
+    const story = await Story.findOne({ id: req.params.storyId });
+    if (!story) return res.status(404).json({ detail: 'Story not found' });
+
+    const filename = req.file.filename; // full URL if Cloudinary, plain name if disk
+    const imageUrl = filename.startsWith('http') ? filename : `/uploads/images/stories/${filename}`;
+    story.images = story.images || [];
+    story.images.push(imageUrl);
+    await story.save();
+    res.json({ message: 'Image uploaded successfully', image_url: imageUrl, image_count: story.images.length });
+  } catch (error) {
+    logger.error({ err: error }, 'Admin upload story image error:');
+    res.status(500).json({ detail: 'Failed to upload image' });
+  }
+});
+
+// Admin: remove a single image from a story
+router.delete('/admin/stories/:storyId/images/:imageIndex', getCurrentUser, requireAdmin, async (req, res) => {
+  try {
+    const story = await Story.findOne({ id: req.params.storyId });
+    if (!story) return res.status(404).json({ detail: 'Story not found' });
+
+    const idx = parseInt(req.params.imageIndex);
+    if (isNaN(idx) || idx < 0 || idx >= (story.images || []).length) {
+      return res.status(400).json({ detail: 'Invalid image index' });
+    }
+
+    const [removed] = story.images.splice(idx, 1);
+
+    // Delete from Cloudinary if cloud-hosted
+    if (removed && removed.startsWith('http')) {
+      const { useCloudinary } = require('../utils/upload');
+      if (useCloudinary()) {
+        const cloudinary = require('cloudinary').v2;
+        const match = removed.match(/\/voice\/.*?(?=\.\w+$)/);
+        if (match) {
+          try { await cloudinary.uploader.destroy(match[0].slice(1)); } catch { /* ignore */ }
+        }
+      }
+    }
+
+    await story.save();
+    res.json({ message: 'Image removed', image_count: story.images.length });
+  } catch (error) {
+    logger.error({ err: error }, 'Admin remove story image error:');
+    res.status(500).json({ detail: 'Failed to remove image' });
+  }
+});
+
 module.exports = router;
 
