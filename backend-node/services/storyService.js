@@ -52,7 +52,8 @@ async function addImage(storyId, userId, filename) {
   const story = await Story.findOne({ id: storyId, user_id: userId });
   if (!story) return null;
 
-  const imageUrl = `/uploads/images/stories/${filename}`;
+  // When Cloudinary is used, filename is already the full https:// URL
+  const imageUrl = filename.startsWith('http') ? filename : `/uploads/images/stories/${filename}`;
   story.images = story.images || [];
   story.images.push(imageUrl);
   await story.save();

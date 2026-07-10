@@ -34,6 +34,74 @@ router.get('/admin/stories', getCurrentUser, requireAdmin, async (req, res) => {
   }
 });
 
+
+// ======================================
+
+// Create story (admin)
+
+// ======================================
+
+router.post('/admin/stories', getCurrentUser, requireAdmin, async (req, res) => {
+
+  try {
+
+    const {
+
+      title,
+
+      incident_date,
+
+      hospital_name,
+
+      location,
+
+      description,
+
+      outcome
+
+    } = req.body;
+
+    const story = new Story({
+
+      user_id: req.user.id,
+
+      user_name: "DrDeath.in", // or req.user.full_name if you prefer
+
+      title,
+
+      incident_date,
+
+      hospital_name,
+
+      location,
+
+      description,
+
+      outcome,
+
+      status: "approved"
+
+    });
+
+    await story.save();
+
+    res.status(201).json(story);
+
+  } catch (error) {
+
+    logger.error({ err: error }, "Admin create story error:");
+
+    res.status(500).json({
+
+      detail: "Failed to create story"
+
+    });
+
+  }
+
+});
+
+
 // Moderate story (admin)
 router.put('/admin/stories/:storyId/moderate', getCurrentUser, requireAdmin, async (req, res) => {
   try {

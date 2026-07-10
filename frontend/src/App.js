@@ -31,6 +31,7 @@ const ResetPassword   = lazy(() => import("./pages/ResetPassword"));
 // Authenticated
 const Dashboard       = lazy(() => import("./pages/Dashboard"));
 const SubmitStory     = lazy(() => import("./pages/SubmitStory"));
+const AdminCreateStory = lazy(() => import("./pages/AdminCreateStory"));
 const EditStory       = lazy(() => import("./pages/EditStory"));
 const ApplyGrant      = lazy(() => import("./pages/ApplyGrant"));
 const AdvocateRegister  = lazy(() => import("./pages/AdvocateRegister"));
@@ -99,6 +100,7 @@ function App() {
                 {/* Authenticated */}
                 <Route path="/dashboard"      element={<RequireAuth><Dashboard /></RequireAuth>} />
                 <Route path="/submit-story"   element={<RequireAuth><SubmitStory /></RequireAuth>} />
+                <Route path="/admin/create-story"   element={<RequireAdmin><AdminCreateStory /></RequireAdmin>} />
                 <Route path="/edit-story/:id" element={<RequireAuth><EditStory /></RequireAuth>} />
                 <Route path="/apply-grant"    element={<RequireAuth><ApplyGrant /></RequireAuth>} />
                 <Route path="/advocate-register"  element={<AdvocateRegister />} />

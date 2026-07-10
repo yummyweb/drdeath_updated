@@ -48,12 +48,31 @@ const SORT_OPTIONS = [
 
 // Category-specific thumbnail backgrounds
 const CATEGORY_BG = {
-  Judgment:           'bg-amber-800',
-  Article:            'bg-slate-700',
-  'RTI Template':     'bg-green-800',
-  'Legal Notice':     'bg-red-800',
-  'Consumer Complaint':'bg-orange-800',
-  Other:              'bg-slate-600',
+
+  Judgment:
+
+    'bg-gradient-to-br from-[#8B5A2B] to-[#5B3715]',
+
+  Article:
+
+    'bg-gradient-to-br from-slate-700 to-slate-900',
+
+  'RTI Template':
+
+    'bg-gradient-to-br from-emerald-700 to-emerald-900',
+
+  'Legal Notice':
+
+    'bg-gradient-to-br from-red-700 to-red-900',
+
+  'Consumer Complaint':
+
+    'bg-gradient-to-br from-orange-700 to-orange-900',
+
+  Other:
+
+    'bg-gradient-to-br from-slate-600 to-slate-800',
+
 };
 const CATEGORY_LABEL_COLOUR = {
   Judgment:           'bg-amber-100 text-amber-800',
@@ -69,7 +88,7 @@ const readingTime = (text) => {
   if (!text) return null;
   const words = text.trim().split(/\s+/).length;
   const mins = Math.max(1, Math.round(words / 200));
-  return `${mins} Minute${mins > 1 ? 's' : ''}`;
+ return `${mins} min read`;
 };
 
 const ResourceRow = ({ resource }) => {
@@ -85,10 +104,71 @@ const ResourceRow = ({ resource }) => {
 
   return (
     <div className="flex gap-5 bg-white border-b border-slate-100 py-6 hover:bg-slate-50 transition-colors">
-      {/* Thumbnail */}
-      <div className={`hidden sm:flex flex-shrink-0 w-36 h-24 ${bgClass} rounded items-center justify-center`}>
-        <Scale className="h-10 w-10 text-white opacity-40" />
-      </div>
+      {/* Resource Cover */}
+
+<div
+
+  className={`
+
+    hidden sm:flex
+
+    flex-shrink-0
+
+    w-40
+
+    h-28
+
+    rounded-xl
+
+    ${bgClass}
+
+    shadow-md
+
+    flex-col
+
+    justify-center
+
+    items-center
+
+    text-center
+
+    px-4
+
+  `}
+
+>
+
+    <div className="text-white text-lg font-bold tracking-[0.25em] uppercase">
+
+        {resource.category || "Resource"}
+
+    </div>
+
+    <div className="w-12 border-b border-white/40 my-3"></div>
+
+    <div className="text-white/80 text-xs uppercase tracking-[0.15em]">
+
+        {resource.court
+
+            ? resource.court
+
+            : resource.category === "Article"
+
+                ? "Medical Law"
+
+                : resource.category === "Legal Notice"
+
+                    ? "Pre-Litigation"
+
+                    : resource.category === "RTI Template"
+
+                        ? "Template"
+
+                        : "DrDeath.in"}
+
+    </div>
+
+</div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
@@ -98,13 +178,34 @@ const ResourceRow = ({ resource }) => {
             {resource.category}
           </span>
           {dateStr && <><Calendar className="h-3 w-3" />{dateStr}</>}
-          {resource.court && <><Scale className="h-3 w-3" />{resource.court}</>}
           {resource.author && <><User className="h-3 w-3" />{resource.author}</>}
         </div>
 
         {/* Title */}
         <Link to={`/resources/${resource._id}`}
-          className="font-serif font-bold text-primary hover:text-secondary transition-colors leading-snug line-clamp-2 block mb-1">
+          className="
+
+font-serif
+
+text-xl
+
+font-bold
+
+leading-snug
+
+text-primary
+
+hover:text-secondary
+
+transition-colors
+
+line-clamp-2
+
+block
+
+mb-2
+
+">
           {resource.title}
         </Link>
 
@@ -127,13 +228,13 @@ const ResourceRow = ({ resource }) => {
           )}
           <Link to={`/resources/${resource._id}`}>
             <button className="text-xs px-3 py-1.5 bg-primary text-white hover:bg-slate-700 transition-colors font-semibold rounded">
-              {resource.category === 'Judgment' ? 'View Full Judgement' : 'View Full Article'}
+              {resource.category === 'Judgment' ? 'Read Judgement' : 'Read Article'}
             </button>
           </Link>
           {resource.pdfUrl && (
             <a href={resource.pdfUrl} target="_blank" rel="noreferrer"
               className="text-xs px-3 py-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors rounded flex items-center gap-1">
-              <Download className="h-3 w-3" /> PDF
+              <Download className="h-3 w-3" /> Download PDF
             </a>
           )}
           {resource.externalLink && (

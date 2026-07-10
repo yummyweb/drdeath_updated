@@ -274,16 +274,43 @@ const Admin = () => {
               <h1 className="font-serif text-2xl md:text-3xl font-bold">
                 Content Moderation
               </h1>
-            </div>
-            <Link to="/admin/settings" data-testid="admin-settings-link">
-              <Button variant="outline" className="border-white text-white hover:bg-white/10">
-                <Settings className="h-4 w-4 mr-2" />
-                Site Settings
-              </Button>
-            </Link>
-          </div>
+              </div>
+          <div className="flex gap-3">
+
+  <Link to="/submit-story">
+
+    <Button className="bg-secondary hover:bg-secondary/90 text-white">
+
+      <Plus className="h-4 w-4 mr-2" />
+
+      Create Story
+
+    </Button>
+
+  </Link>
+
+  <Link to="/admin/settings" data-testid="admin-settings-link">
+
+    <Button
+
+      variant="outline"
+
+      className="border-white text-white hover:bg-white/10"
+
+    >
+
+      <Settings className="h-4 w-4 mr-2" />
+
+      Site Settings
+
+    </Button>
+
+  </Link>
+
+</div>
         </div>
       </div>
+</div>
 
       {/* Top stats strip */}
       <div className="bg-white border-b border-slate-200">
@@ -1765,6 +1792,7 @@ Orders ({orders.length})
         </DialogContent>
       </Dialog>
     </div>
+    
   );
 };
 
